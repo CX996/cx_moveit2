@@ -1,0 +1,25 @@
+[0.028s] Invoking command in '/home/xionggu/cx_moveit/ws_moveit/build/hello_moveit': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --build /home/xionggu/cx_moveit/ws_moveit/build/hello_moveit -- -j8 -l8
+[0.161s] [ 50%] [32mBuilding CXX object CMakeFiles/hello_moveit.dir/src/hello_moveit.cpp.o[0m
+[6.284s] [100%] [32m[1mLinking CXX executable hello_moveit[0m
+[6.635s] [100%] Built target hello_moveit
+[6.662s] Invoked command in '/home/xionggu/cx_moveit/ws_moveit/build/hello_moveit' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --build /home/xionggu/cx_moveit/ws_moveit/build/hello_moveit -- -j8 -l8
+[6.671s] Invoking command in '/home/xionggu/cx_moveit/ws_moveit/build/hello_moveit': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --install /home/xionggu/cx_moveit/ws_moveit/build/hello_moveit
+[6.682s] -- Install configuration: ""
+[6.682s] -- Installing: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/lib/hello_moveit/hello_moveit
+[6.682s] -- Set runtime path of "/home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/lib/hello_moveit/hello_moveit" to ""
+[6.682s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/ament_index/resource_index/package_run_dependencies/hello_moveit
+[6.682s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/ament_index/resource_index/parent_prefix_path/hello_moveit
+[6.682s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/environment/ament_prefix_path.sh
+[6.682s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/environment/ament_prefix_path.dsv
+[6.682s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/environment/path.sh
+[6.682s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/environment/path.dsv
+[6.682s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/local_setup.bash
+[6.682s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/local_setup.sh
+[6.683s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/local_setup.zsh
+[6.683s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/local_setup.dsv
+[6.683s] -- Installing: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/package.dsv
+[6.683s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/ament_index/resource_index/packages/hello_moveit
+[6.683s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/cmake/hello_moveitConfig.cmake
+[6.683s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/cmake/hello_moveitConfig-version.cmake
+[6.683s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/hello_moveit/share/hello_moveit/package.xml
+[6.684s] Invoked command in '/home/xionggu/cx_moveit/ws_moveit/build/hello_moveit' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --install /home/xionggu/cx_moveit/ws_moveit/build/hello_moveit

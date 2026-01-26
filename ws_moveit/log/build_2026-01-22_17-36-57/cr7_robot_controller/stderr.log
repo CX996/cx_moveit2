@@ -1,0 +1,8 @@
+[01m[K/home/xionggu/cx_moveit/ws_moveit/src/cr7_robot_controller/src/cr7_robot_controller.cpp:[m[K In member function ‘[01m[Kbool cr7_controller::CR7RobotController::initialize(double)[m[K’:
+[01m[K/home/xionggu/cx_moveit/ws_moveit/src/cr7_robot_controller/src/cr7_robot_controller.cpp:88:7:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ before ‘[01m[K等待机器人状态[m[K’
+   88 |     1.[01;31m[K [m[K[32m[K等待机器人状态[m[K
+      |       [01;31m[K^[m[K[32m[K~~~~~~~~~~~~~~[m[K
+      |       [32m[K;[m[K
+gmake[2]: *** [CMakeFiles/cr7_controller.dir/build.make:76：CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o] 错误 1
+gmake[1]: *** [CMakeFiles/Makefile2:137：CMakeFiles/cr7_controller.dir/all] 错误 2
+gmake: *** [Makefile:146：all] 错误 2

@@ -1,0 +1,6 @@
+[31mCMake Error at cmake_install.cmake:70 (file):
+  file INSTALL cannot find
+  "/home/xionggu/cx_moveit/ws_moveit/src/cr7_robot_controller/config": No
+  such file or directory.
+
+[0m
