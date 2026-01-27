@@ -1,0 +1,2 @@
+index,time_from_start,position_0(joint1),position_1(joint2),position_2(joint3),position_3(joint4),position_4(joint5),position_5(joint6),velocity_0,velocity_1,velocity_2,velocity_3,velocity_4,velocity_5,acceleration_0,acceleration_1,acceleration_2,acceleration_3,acceleration_4,acceleration_5
+0,0,-0.220853,-1.40122,0.609944,-0.546446,-0.710037,-1.99059,0,0,0,0,0,0,0,0,0,0,0,0

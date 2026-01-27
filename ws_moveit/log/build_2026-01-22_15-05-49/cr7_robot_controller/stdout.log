@@ -1,9 +1,0 @@
-[35m[1mConsolidate compiler generated dependencies of target cr7_controller[0m
-[ 33%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o[0m
-[ 66%] [32m[1mLinking CXX executable cr7_controller[0m
-[100%] Built target cr7_controller
--- Install configuration: ""
--- Installing: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/lib/cr7_robot_controller/cr7_controller
--- Set runtime path of "/home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/lib/cr7_robot_controller/cr7_controller" to ""
--- Installing: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/launch
--- Installing: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/launch/cr7_controller.launch.py

@@ -1,0 +1,31 @@
+[0.047s] Invoking command in '/home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --build /home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller -- -j8 -l8
+[0.142s] [35m[1mConsolidate compiler generated dependencies of target cr7_controller[0m
+[0.189s] [ 33%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o[0m
+[6.915s] [ 66%] [32m[1mLinking CXX executable cr7_controller[0m
+[7.267s] [100%] Built target cr7_controller
+[7.294s] Invoked command in '/home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --build /home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller -- -j8 -l8
+[7.296s] Invoking command in '/home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --install /home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller
+[7.307s] -- Install configuration: ""
+[7.307s] -- Installing: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/lib/cr7_robot_controller/cr7_controller
+[7.308s] -- Set runtime path of "/home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/lib/cr7_robot_controller/cr7_controller" to ""
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/launch
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/launch/cr7_controller.launch.py
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/config
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/config/kinematics.yaml
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/ament_index/resource_index/package_run_dependencies/cr7_robot_controller
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/ament_index/resource_index/parent_prefix_path/cr7_robot_controller
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/environment/ament_prefix_path.sh
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/environment/ament_prefix_path.dsv
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/environment/path.sh
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/environment/path.dsv
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/local_setup.bash
+[7.309s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/local_setup.sh
+[7.310s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/local_setup.zsh
+[7.310s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/local_setup.dsv
+[7.311s] -- Installing: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/package.dsv
+[7.311s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/ament_index/resource_index/packages/cr7_robot_controller
+[7.311s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/cmake/ament_cmake_export_dependencies-extras.cmake
+[7.311s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/cmake/cr7_robot_controllerConfig.cmake
+[7.311s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/cmake/cr7_robot_controllerConfig-version.cmake
+[7.311s] -- Up-to-date: /home/xionggu/cx_moveit/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/package.xml
+[7.312s] Invoked command in '/home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --install /home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller

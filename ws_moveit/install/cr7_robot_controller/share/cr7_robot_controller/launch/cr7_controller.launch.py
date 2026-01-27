@@ -16,7 +16,7 @@ def generate_launch_description():
             description='是否运行测试模式'
         ),
         DeclareLaunchArgument(
-            'debug_mode', default_value='false',
+            'debug_mode', default_value='true',
             description='是否启用调试输出'
         ),
         DeclareLaunchArgument(

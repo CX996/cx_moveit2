@@ -1,0 +1,27 @@
+[0.025s] Invoking command in '/home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --build /home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller -- -j8 -l8
+[0.160s] [ 33%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o[0m
+[4.162s] [01m[K/home/xionggu/cx_moveit/ws_moveit/src/cr7_robot_controller/src/cr7_robot_controller.cpp:[m[K In member function ‘[01m[Kstd::vector<cr7_controller::CR7RobotController::Result> cr7_controller::CR7RobotController::executeWaypoints(const std::vector<cr7_controller::Waypoint>&, double)[m[K’:
+[4.162s] [01m[K/home/xionggu/cx_moveit/ws_moveit/src/cr7_robot_controller/src/cr7_robot_controller.cpp:144:91:[m[K [01;31m[Kerror: [m[Kinvalid initialization of reference of type ‘[01m[Kconst nanoseconds&[m[K’ {aka ‘[01m[Kconst std::chrono::duration<long int, std::ratio<1, 1000000000> >&[m[K’} from expression of type ‘[01m[Kstd::chrono::duration<double>[m[K’
+[4.162s]   144 | waypoints.size() - 1 && delay_seconds > 0) rclcpp::sleep_for(std::chrono::[01;31m[Kduration<double>(delay_seconds)[m[K);
+[4.162s]       |                                                                           [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[4.163s] 
+[4.163s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:25[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[4.163s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[4.163s]                  from [01m[K/home/xionggu/cx_moveit/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/cr7_robot_controller.hpp:19[m[K,
+[4.163s]                  from [01m[K/home/xionggu/cx_moveit/ws_moveit/src/cr7_robot_controller/src/cr7_robot_controller.cpp:8[m[K:
+[4.163s] [01m[K/opt/ros/humble/include/rclcpp/rclcpp/utilities.hpp:233:36:[m[K [01;36m[Knote: [m[Kin passing argument 1 of ‘[01m[Kbool rclcpp::sleep_for(const nanoseconds&, rclcpp::Context::SharedPtr)[m[K’
+[4.163s]   233 |   [01;36m[Kconst std::chrono::nanoseconds & nanoseconds[m[K,
+[4.163s]       |   [01;36m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~[m[K
+[6.303s] gmake[2]: *** [CMakeFiles/cr7_controller.dir/build.make:76：CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o] 错误 1
+[6.304s] gmake[1]: *** [CMakeFiles/Makefile2:137：CMakeFiles/cr7_controller.dir/all] 错误 2
+[6.304s] gmake: *** [Makefile:146：all] 错误 2
+[6.306s] Invoked command in '/home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --build /home/xionggu/cx_moveit/ws_moveit/build/cr7_robot_controller -- -j8 -l8
