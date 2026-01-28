@@ -74,9 +74,9 @@ class ObstacleManager(Node):
             {
                 "id": "box_1",  # 障碍物唯一标识符
                 "type": SolidPrimitive.BOX,  # 障碍物类型：立方体
-                "dimensions": [0.8, 0.01, 0.5],  # 尺寸：[长, 宽, 高]（单位：米）
+                "dimensions": [1.0, 0.01, 0.5],  # 尺寸：[长, 宽, 高]（单位：米）
                 "pose": {  # 障碍物位置
-                    "x": 0.4,  # X坐标
+                    "x": 0.5,  # X坐标
                     "y": 0.4,  # Y坐标
                     "z": 0.25,  # Z坐标
                 }
@@ -84,9 +84,9 @@ class ObstacleManager(Node):
             {
                 "id": "box_2",
                 "type": SolidPrimitive.BOX,
-                "dimensions": [0.8, 0.01, 0.5],
+                "dimensions": [1.0, 0.01, 0.5],
                 "pose": {
-                    "x": 0.4,
+                    "x": 0.5,
                     "y": -0.4,
                     "z": 0.25,
                 }
@@ -96,7 +96,7 @@ class ObstacleManager(Node):
                 "type": SolidPrimitive.BOX,
                 "dimensions": [0.01, 0.8, 0.5],
                 "pose": {
-                    "x": 0.8,
+                    "x": 1.0,
                     "y": 0.0,
                     "z": 0.25,
                 }
@@ -104,9 +104,9 @@ class ObstacleManager(Node):
             {
                 "id": "box_4",
                 "type": SolidPrimitive.BOX,
-                "dimensions": [1.0, 1.0, 0.01],
+                "dimensions": [1.1, 0.9, 0.01],
                 "pose": {
-                    "x": 0.4,
+                    "x": 0.45,
                     "y": 0.0,
                     "z": -0.005,
                 }
