@@ -24,6 +24,11 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <trajectory_msgs/msg/joint_trajectory_point.hpp>
 
+// 添加TF2相关头文件
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
 namespace cr7_controller {
 
 /**
@@ -32,11 +37,13 @@ namespace cr7_controller {
  * 
  * 包含位置、姿态和名称，用于定义机器人需要到达的目标点
  */
-struct Waypoint {
+struct Waypoint 
+{
     std::string name;                      ///< 路点名称
     double x, y, z;                        ///< 位置 (米)
     double qx, qy, qz, qw;                 ///< 姿态 (四元数)
-    
+    std::string frame_id;  // 新增：目标坐标系
+
     /**
      * @brief 构造函数
      * @param name_ 路点名称
@@ -48,11 +55,19 @@ struct Waypoint {
      * @param qz_ 四元数Z分量
      * @param qw_ 四元数W分量
      */
-    Waypoint(const std::string& name_ = "",
-             double x_ = 0.0, double y_ = 0.0, double z_ = 0.0,
-             double qx_ = 0.0, double qy_ = 0.0, double qz_ = 0.0, double qw_ = 1.0)
-        : name(name_), x(x_), y(y_), z(z_), qx(qx_), qy(qy_), qz(qz_), qw(qw_) {}
+    Waypoint(const std::string& name, 
+             double x, double y, double z,
+             double qx, double qy, double qz, double qw,
+             const std::string& frame_id = "base_link")  // 默认基坐标系
+        : name(name), x(x), y(y), z(z), qx(qx), qy(qy), qz(qz), qw(qw), 
+          frame_id(frame_id) {}
     
+    /**
+     * @brief 转换为ROS PoseStamped消息
+     * @return geometry_msgs::msg::PoseStamped ROS位姿消息
+     */  
+    geometry_msgs::msg::PoseStamped toPoseStamped() const;  // 新增方法
+
     /**
      * @brief 转换为ROS Pose消息
      * @return geometry_msgs::msg::Pose ROS位姿消息
@@ -131,17 +146,38 @@ public:
     /**
      * @brief PILZ规划配置结构
      */
+    // struct PilzConfig {
+    //     PilzPlanner planner_type;   ///< 规划器类型
+    //     double velocity_scale;      ///< 速度缩放因子
+    //     double acceleration_scale;   ///< 加速度缩放因子
+    //     double blending_radius;      ///< 轨迹混合半径
+        
+    //     PilzConfig() 
+    //         : planner_type(PilzPlanner::LIN), 
+    //           velocity_scale(0.1),
+    //           acceleration_scale(0.3),
+    //           blending_radius(0.1) {}
+    // };
+
     struct PilzConfig {
-        PilzPlanner planner_type;   ///< 规划器类型
-        double velocity_scale;      ///< 速度缩放因子
-        double acceleration_scale;   ///< 加速度缩放因子
-        double blending_radius;      ///< 轨迹混合半径
+        PilzPlanner planner_type;
+        double velocity_scale;
+        double acceleration_scale;
+        double blending_radius;
+        double max_deviation;           // 新增：最大位置偏差
+        double orientation_tolerance;   // 新增：方向容差
+        double goal_position_tolerance; // 新增：目标位置容差
+        double goal_orientation_tolerance; // 新增：目标方向容差
         
         PilzConfig() 
             : planner_type(PilzPlanner::LIN), 
-              velocity_scale(0.3),
-              acceleration_scale(0.3),
-              blending_radius(0.0) {}
+            velocity_scale(0.1),
+            acceleration_scale(0.3),
+            blending_radius(0.1),
+            max_deviation(0.005),     // 1mm偏差
+            orientation_tolerance(0.01), // 约0.58度
+            goal_position_tolerance(0.005),  // 5mm
+            goal_orientation_tolerance(0.01) {}  // 约0.57度
     };
 
     /**
@@ -165,6 +201,15 @@ public:
     // 基础运动控制方法
     // ============================================================================
     
+    bool transformPose(const geometry_msgs::msg::PoseStamped& input_pose,
+                                        geometry_msgs::msg::PoseStamped& output_pose,
+                                        const std::string& target_frame,
+                                        double timeout_sec = 2.0);
+
+    // 修改 moveToPose 方法，支持 PoseStamped
+    Result moveToPose(const geometry_msgs::msg::PoseStamped& target_pose,
+                    const std::string& waypoint_name);                        
+
     /**
      * @brief 移动到单个位姿
      * @param target_pose 目标位姿
@@ -172,7 +217,7 @@ public:
      * @return Result 规划结果
      */
     Result moveToPose(const geometry_msgs::msg::Pose& target_pose,
-                     const std::string& waypoint_name = "");
+                    const std::string& waypoint_name);
     
     /**
      * @brief 移动到路点
@@ -299,6 +344,18 @@ public:
      */
     Result executeCartesianWeldingPath();
     
+    /**
+     * @brief 使用PILZ执行焊接点位路径
+     * 先用关节空间移动到起点，再用PILZ执行到终点
+     * @return Result 规划结果
+     */
+    Result executePilzWeldingPath();
+    
+    /**
+     * @brief 使用工具坐标系进行点位执行
+     * @return Result 规划结果
+     */
+    Result executetoolAxis() ;
     // ============================================================================
     // 状态查询和配置方法
     // ============================================================================
@@ -368,6 +425,9 @@ private:
     // 私有辅助方法
     // ============================================================================
     
+    Result moveToPoseImpl(const geometry_msgs::msg::Pose& target_pose,
+                         const std::string& waypoint_name);
+
     /**
      * @brief 等待机器人状态就绪
      */
@@ -491,6 +551,11 @@ private:
     rclcpp::Logger logger_;                                 ///< 日志记录器
     CartesianPathConfig cartesian_config_;                 ///< 笛卡尔路径配置
     PilzConfig pilz_config_;                               ///< PILZ规划器配置
+
+    // 添加坐标变换监听器
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+
 };
 
 }  // namespace cr7_controller

@@ -135,9 +135,10 @@ void showPilzMenu() {
     std::cout << "3. 测试CIRC规划器（圆周运动）" << std::endl;
     std::cout << "4. 获取可用PILZ规划器列表" << std::endl;
     std::cout << "5. 设置PILZ规划参数" << std::endl;
+    std::cout << "6. PILZ焊接点位路径测试" << std::endl;
     std::cout << "0. 返回主菜单" << std::endl;
     std::cout << "========================================" << std::endl;
-    std::cout << "请选择操作 (0-5): ";
+    std::cout << "请选择操作 (0-6): ";
     std::cout.flush();
 }
 
@@ -421,8 +422,16 @@ bool processPilzCommand(std::shared_ptr<CR7RobotController> controller, char cho
             setPilzParameters(controller);
             break;
             
+        case '6': // PILZ焊接点位路径测试
+            std::cout << "\n执行PILZ焊接点位路径测试..." << std::endl;
+            {
+                auto result = controller->executePilzWeldingPath();
+                std::cout << "PILZ焊接点位路径测试结果: " << resultToString(result) << std::endl;
+            }
+            break;
+            
         default:
-            std::cout << "\n无效选择，请重新输入 (0-5)" << std::endl;
+            std::cout << "\n无效选择，请重新输入 (0-6)" << std::endl;
             break;
     }
     
@@ -678,7 +687,7 @@ int main(int argc, char* argv[]) {
                 controller->executeTestPath();
             } else {
                 RCLCPP_INFO(node->get_logger(), "执行焊接路径...");
-                controller->executeCartesianWeldingPath();
+                controller->executetoolAxis();
             }
             
             // 等待用户退出

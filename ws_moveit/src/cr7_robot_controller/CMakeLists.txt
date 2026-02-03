@@ -13,8 +13,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 查找依赖包
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(moveit_core REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
-find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 # 包含目录
 include_directories(
@@ -34,6 +37,13 @@ ament_target_dependencies(cr7_controller
   rclcpp
   moveit_ros_planning_interface
   geometry_msgs
+)
+
+# 在target_link_libraries中添加
+target_link_libraries(cr7_controller
+  ${MOVEIT_LIBRARIES}
+  tf2::tf2
+  tf2_ros::tf2_ros
 )
 
 # 安装目标

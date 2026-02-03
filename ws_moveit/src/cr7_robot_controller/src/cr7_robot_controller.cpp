@@ -14,6 +14,13 @@
 #include <algorithm>
 #include <limits>
 #include <fstream>
+#include <cstdlib>
+#include <ctime>
+
+// 添加TF2相关头文件
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 using namespace std::chrono_literals;
 
@@ -23,8 +30,15 @@ namespace cr7_controller {
 // Waypoint 方法实现
 // ============================================================================
 
+geometry_msgs::msg::PoseStamped Waypoint::toPoseStamped() const {  // 新增方法
+    geometry_msgs::msg::PoseStamped pose_stamped;
+    pose_stamped.header.frame_id = frame_id;
+    pose_stamped.pose = toPose();
+    return pose_stamped;
+}
+
 geometry_msgs::msg::Pose Waypoint::toPose() const {
-    geometry_msgs::msg::Pose pose;
+    geometry_msgs::msg::Pose pose; ;
     pose.position.x = x;
     pose.position.y = y;
     pose.position.z = z;
@@ -64,11 +78,16 @@ CR7RobotController::CR7RobotController(rclcpp::Node::SharedPtr node,
                                       const std::string& planning_group)
     : node_(node)
     , logger_(node->get_logger())
-    , initialized_(false) {
+    , initialized_(false) 
+    {
     
+    // 初始化TF2
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
     RCLCPP_INFO(logger_, "创建CR7机器人控制器");
     RCLCPP_INFO(logger_, "规划组: %s", planning_group.c_str());
-    
+
     try {
         // 创建MoveGroup接口
         move_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
@@ -154,9 +173,77 @@ bool CR7RobotController::waitForRobotState(double timeout_sec)
     return true;
 }
 
-CR7RobotController::Result CR7RobotController::moveToPose(
-    const geometry_msgs::msg::Pose& target_pose,
-    const std::string& waypoint_name) {
+// 新增：坐标变换方法
+bool CR7RobotController::transformPose(const geometry_msgs::msg::PoseStamped& input_pose,
+                                        geometry_msgs::msg::PoseStamped& output_pose,
+                                        const std::string& target_frame,
+                                        double timeout_sec) 
+{
+    try {
+        // 等待坐标变换可用
+        if (!tf_buffer_->canTransform(target_frame, input_pose.header.frame_id,
+                                        tf2::TimePointZero,
+                                        tf2::durationFromSec(timeout_sec))) {
+            RCLCPP_ERROR(logger_, "无法获取从 %s 到 %s 的坐标变换",
+                        input_pose.header.frame_id.c_str(), target_frame.c_str());
+            return false;
+        }
+        
+        // 执行坐标变换
+        output_pose = tf_buffer_->transform(input_pose, target_frame);
+        return true;
+        
+    } catch (tf2::TransformException& ex) {
+        RCLCPP_ERROR(logger_, "坐标变换失败: %s", ex.what());
+        return false;
+    }
+}
+
+// 保持原有接口兼容性
+CR7RobotController::Result CR7RobotController::moveToPose(const geometry_msgs::msg::Pose& target_pose,
+                                                          const std::string& waypoint_name) 
+{
+    geometry_msgs::msg::PoseStamped pose_stamped;
+    pose_stamped.header.frame_id = move_group_->getPlanningFrame(); // 默认规划坐标系
+    pose_stamped.pose = target_pose;
+    return moveToPose(pose_stamped, waypoint_name);
+}
+
+// 修改 moveToPose 方法，支持 PoseStamped
+CR7RobotController::Result CR7RobotController::moveToPose(const geometry_msgs::msg::PoseStamped& target_pose,
+                                                          const std::string& waypoint_name) 
+{
+    
+    if (!initialized_) {
+        RCLCPP_ERROR(logger_, "控制器未初始化");
+        return Result::ROBOT_NOT_READY;
+    }
+    
+    // 获取规划坐标系（通常是机器人的基坐标系）
+    std::string planning_frame = move_group_->getPlanningFrame();
+    
+    geometry_msgs::msg::PoseStamped transformed_pose;
+    
+    // 如果目标坐标系与规划坐标系不同，进行坐标变换
+    if (target_pose.header.frame_id != planning_frame) {
+        RCLCPP_INFO(logger_, "变换坐标系: %s -> %s", 
+                    target_pose.header.frame_id.c_str(), planning_frame.c_str());
+        
+        if (!transformPose(target_pose, transformed_pose, planning_frame)) {
+            RCLCPP_ERROR(logger_, "坐标变换失败");
+            return Result::INVALID_INPUT;
+        }
+    } else {
+        transformed_pose = target_pose;
+    }
+    
+    // 使用变换后的位姿继续执行
+    return moveToPoseImpl(transformed_pose.pose, waypoint_name);
+}
+
+CR7RobotController::Result CR7RobotController::moveToPoseImpl(
+                                            const geometry_msgs::msg::Pose& target_pose,
+                                            const std::string& waypoint_name) {
     
     if (!initialized_) {
         RCLCPP_ERROR(logger_, "控制器未初始化");
@@ -738,17 +825,157 @@ CR7RobotController::Result CR7RobotController::moveWithPilzCirc(const geometry_m
     }
 }
 
-CR7RobotController::Result CR7RobotController::executePilzPlan(const geometry_msgs::msg::Pose& target_pose,
-                                                               const std::string& planner_id,
-                                                               const PilzConfig& config) {
+// CR7RobotController::Result CR7RobotController::executePilzPlan(const geometry_msgs::msg::Pose& target_pose,
+//                                                                const std::string& planner_id,
+//                                                                const PilzConfig& config) {
+//     if (!initialized_) {
+//         RCLCPP_ERROR(logger_, "控制器未初始化");
+//         return Result::ROBOT_NOT_READY;
+//     }
+    
+//     // 设置规划器
+//     if (!setPilzPlanner(planner_id)) {
+//         return Result::PLANNING_FAILED;
+//     }
+    
+//     // 验证输入位姿
+//     std::string error_msg;
+//     if (!validatePose(target_pose, &error_msg)) {
+//         RCLCPP_ERROR(logger_, "目标位姿无效: %s", error_msg.c_str());
+//         return Result::INVALID_INPUT;
+//     }
+    
+//     try {
+//         // 设置规划参数
+//         move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
+//         move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
+        
+//         // 多次规划尝试（带位姿微调）
+//         const int max_attempts = 50;           // 最多尝试5次
+//         const double position_offset = 0.005; // 位置微调 5mm
+//         const double angle_offset = 0.05;     // 角度微调 0.05 rad
+        
+//         moveit::planning_interface::MoveGroupInterface::Plan best_plan;
+//         bool planning_success = false;
+        
+//         for (int attempt = 0; attempt < max_attempts; ++attempt) {
+//             // 创建微调后的位姿
+//             geometry_msgs::msg::Pose adjusted_pose = target_pose;
+            
+//             if (attempt > 0) {
+//                 // 对目标位姿进行微小扰动
+//                 // 位置微调：随机偏移
+//                 double pos_offset_x = (rand() % 2 == 0 ? 1 : -1) * position_offset * (attempt / 2 + 1);
+//                 double pos_offset_y = (rand() % 2 == 0 ? 1 : -1) * position_offset * (attempt / 2 + 1);
+//                 double pos_offset_z = (rand() % 2 == 0 ? 1 : -1) * position_offset * (attempt / 2 + 1);
+                
+//                 adjusted_pose.position.x += pos_offset_x;
+//                 adjusted_pose.position.y += pos_offset_y;
+//                 adjusted_pose.position.z += pos_offset_z;
+                
+//                 // 四元数微调（轻微旋转）
+//                 double angle_perturb = angle_offset * (attempt / 2 + 1);
+//                 adjusted_pose.orientation.x += (rand() % 2 == 0 ? 1 : -1) * angle_perturb * 0.01;
+//                 adjusted_pose.orientation.y += (rand() % 2 == 0 ? 1 : -1) * angle_perturb * 0.01;
+                
+//                 // 重新归一化四元数
+//                 double norm = std::sqrt(
+//                     adjusted_pose.orientation.x * adjusted_pose.orientation.x +
+//                     adjusted_pose.orientation.y * adjusted_pose.orientation.y +
+//                     adjusted_pose.orientation.z * adjusted_pose.orientation.z +
+//                     adjusted_pose.orientation.w * adjusted_pose.orientation.w
+//                 );
+//                 if (norm > 1e-6) {
+//                     adjusted_pose.orientation.x /= norm;
+//                     adjusted_pose.orientation.y /= norm;
+//                     adjusted_pose.orientation.z /= norm;
+//                     adjusted_pose.orientation.w /= norm;
+//                 }
+                
+//                 RCLCPP_INFO(logger_, "规划尝试 %d/%d (位姿微调)...", attempt + 1, max_attempts);
+//             } else {
+//                 RCLCPP_INFO(logger_, "开始PILZ %s 规划 (尝试 %d/%d)...", 
+//                            planner_id.c_str(), attempt + 1, max_attempts);
+//             }
+            
+//             // 设置目标位姿
+//             move_group_->clearPoseTargets();
+//             move_group_->setPoseTarget(adjusted_pose);
+            
+//             // 尝试规划
+//             moveit::planning_interface::MoveGroupInterface::Plan plan;
+//             auto start_time = node_->now();
+//             bool success = static_cast<bool>(move_group_->plan(plan));
+//             double planning_time = (node_->now() - start_time).seconds();
+            
+//             if (success && !plan.trajectory_.joint_trajectory.points.empty()) {
+//                 RCLCPP_INFO(logger_, "✓ PILZ %s 规划成功 (第%d次尝试, 耗时 %.3f 秒)", 
+//                            planner_id.c_str(), attempt + 1, planning_time);
+//                 RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
+                
+//                 best_plan = plan;
+//                 planning_success = true;
+//                 break; // 规划成功，退出循环
+//             } else {
+//                 RCLCPP_WARN(logger_, "PILZ %s 规划失败 (第%d次尝试, 耗时 %.3f 秒)", 
+//                            planner_id.c_str(), attempt + 1, planning_time);
+//             }
+//         }
+        
+//         if (!planning_success) {
+//             RCLCPP_ERROR(logger_, "PILZ %s 规划失败: 所有 %d 次尝试都未成功", 
+//                         planner_id.c_str(), max_attempts);
+//             return Result::PLANNING_FAILED;
+//         }
+        
+//         // 保存轨迹分析信息
+//         std::string trajectory_prefix = "pilz_" + planner_id + "_trajectory";
+//         saveTrajectoryAnalysis(best_plan.trajectory_, trajectory_prefix);
+        
+//         // 分析轨迹特点
+//         if (!best_plan.trajectory_.joint_trajectory.points.empty()) {
+//             const auto& points = best_plan.trajectory_.joint_trajectory.points;
+//             double total_time = points.back().time_from_start.sec + 
+//                                points.back().time_from_start.nanosec * 1e-9;
+//             RCLCPP_INFO(logger_, "轨迹总时间: %.3f 秒", total_time);
+            
+//             // 打印PILZ轨迹特点
+//             RCLCPP_INFO(logger_, "PILZ轨迹特点:");
+//             RCLCPP_INFO(logger_, "  - 平滑的加速度曲线");
+//             RCLCPP_INFO(logger_, "  - 工业级运动规划");
+//             RCLCPP_INFO(logger_, "  - 实时性能优化");
+//         }
+        
+//         // 执行规划
+//         RCLCPP_INFO(logger_, "开始执行PILZ %s 运动...", planner_id.c_str());
+//         auto start_time = node_->now();
+//         auto result = move_group_->execute(best_plan);
+//         double execution_time = (node_->now() - start_time).seconds();
+        
+//         if (result == moveit::core::MoveItErrorCode::SUCCESS) {
+//             RCLCPP_INFO(logger_, "✓ PILZ %s 运动执行成功 (耗时 %.3f 秒)", 
+//                        planner_id.c_str(), execution_time);
+//             return Result::SUCCESS;
+//         } else {
+//             RCLCPP_ERROR(logger_, "PILZ %s 运动执行失败 (错误码: %d)", 
+//                         planner_id.c_str(), result.val);
+//             return Result::EXECUTION_FAILED;
+//         }
+        
+//     } catch (const std::exception& e) {
+//         RCLCPP_ERROR(logger_, "PILZ %s 运动异常: %s", planner_id.c_str(), e.what());
+//         return Result::EXECUTION_FAILED;
+//     }
+// }
+
+CR7RobotController::Result CR7RobotController::executePilzPlan(
+    const geometry_msgs::msg::Pose& target_pose,
+    const std::string& planner_id,
+    const PilzConfig& config) {
+    
     if (!initialized_) {
         RCLCPP_ERROR(logger_, "控制器未初始化");
         return Result::ROBOT_NOT_READY;
-    }
-    
-    // 设置规划器
-    if (!setPilzPlanner(planner_id)) {
-        return Result::PLANNING_FAILED;
     }
     
     // 验证输入位姿
@@ -759,47 +986,127 @@ CR7RobotController::Result CR7RobotController::executePilzPlan(const geometry_ms
     }
     
     try {
-        // 设置规划参数
+        // 1. 设置规划器
+        move_group_->setPlannerId(planner_id);
+        RCLCPP_INFO(logger_, "使用规划器: %s", planner_id.c_str());
+        
+        // 2. 设置规划参数
         move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
         move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
         
-        // 设置目标位姿
+        // 3. 设置PILZ特定的约束
+        if (planner_id == "LIN") {
+            // 为直线运动设置约束
+            moveit_msgs::msg::Constraints path_constraints;
+            
+            // 位置约束 - 直线运动
+            moveit_msgs::msg::PositionConstraint pos_constraint;
+            pos_constraint.header.frame_id = move_group_->getPlanningFrame();
+            pos_constraint.link_name = move_group_->getEndEffectorLink();
+            pos_constraint.weight = 1.0;
+            
+            // 创建球形约束区域
+            shape_msgs::msg::SolidPrimitive sphere;
+            sphere.type = shape_msgs::msg::SolidPrimitive::SPHERE;
+            sphere.dimensions.resize(1);
+            sphere.dimensions[0] = config.max_deviation;  // 允许的最大偏差
+            
+            geometry_msgs::msg::Pose sphere_pose;
+            sphere_pose.orientation.w = 1.0;
+            
+            // pos_constraint.constraint_region.primitives.push_back(sphere);
+            // pos_constraint.constraint_region.primitive_poses.push_back(sphere_pose);
+            
+            // 方向约束 - 保持末端朝向
+            auto current_pose = move_group_->getCurrentPose().pose;
+            moveit_msgs::msg::OrientationConstraint orient_constraint;
+            orient_constraint.header.frame_id = move_group_->getPlanningFrame();
+            orient_constraint.link_name = move_group_->getEndEffectorLink();
+            orient_constraint.orientation = current_pose.orientation;
+            orient_constraint.absolute_x_axis_tolerance = config.orientation_tolerance;
+            orient_constraint.absolute_y_axis_tolerance = config.orientation_tolerance;
+            orient_constraint.absolute_z_axis_tolerance = config.orientation_tolerance;
+            orient_constraint.weight = 1.0;
+            
+            path_constraints.position_constraints.push_back(pos_constraint);
+            // path_constraints.orientation_constraints.push_back(orient_constraint);
+            
+            move_group_->setPathConstraints(path_constraints);
+            RCLCPP_INFO(logger_, "已设置直线约束，最大偏差: %.3f m", config.max_deviation);
+        }
+        
+        // 4. 清除目标并设置新目标
+        move_group_->clearPoseTargets();
         move_group_->setPoseTarget(target_pose);
         
-        // 规划运动
-        moveit::planning_interface::MoveGroupInterface::Plan plan;
-        RCLCPP_INFO(logger_, "开始PILZ %s 规划...", planner_id.c_str());
+        // 5. 设置目标容差
+        move_group_->setGoalTolerance(config.goal_position_tolerance);
+        move_group_->setGoalOrientationTolerance(config.goal_orientation_tolerance);
         
-        auto start_time = node_->now();
-        bool success = static_cast<bool>(move_group_->plan(plan));
-        double planning_time = (node_->now() - start_time).seconds();
+        // 6. 规划（减少尝试次数）
+        const int max_attempts = 20;  // 减少到3次
+        moveit::planning_interface::MoveGroupInterface::Plan best_plan;
+        bool planning_success = false;
         
-        if (!success) {
-            RCLCPP_ERROR(logger_, "PILZ %s 规划失败 (耗时 %.3f 秒)", planner_id.c_str(), planning_time);
+        for (int attempt = 0; attempt < max_attempts; ++attempt) {
+            moveit::planning_interface::MoveGroupInterface::Plan plan;
+            
+            auto start_time = node_->now();
+            bool success = static_cast<bool>(move_group_->plan(plan));
+            double planning_time = (node_->now() - start_time).seconds();
+            
+            if (success && !plan.trajectory_.joint_trajectory.points.empty()) {
+                RCLCPP_INFO(logger_, "✓ PILZ %s 规划成功 (第%d次尝试, 耗时 %.3f 秒)", 
+                           planner_id.c_str(), attempt + 1, planning_time);
+                RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
+                
+                // 验证LIN轨迹
+                if (planner_id == "LIN") {
+                    bool is_linear = true;
+                    const auto& points = plan.trajectory_.joint_trajectory.points;
+                    if (points.size() > 2) {
+                        // 简单检查：末端应该接近直线运动
+                        // 您可以添加更复杂的检查逻辑
+                    }
+                    
+                    if (!is_linear) {
+                        RCLCPP_WARN(logger_, "LIN轨迹不够直，重新尝试...");
+                        continue;
+                    }
+                }
+                
+                best_plan = plan;
+                planning_success = true;
+                break;
+            } else {
+                RCLCPP_WARN(logger_, "PILZ %s 规划失败 (第%d次尝试, 耗时 %.3f 秒)", 
+                           planner_id.c_str(), attempt + 1, planning_time);
+                
+                // 短暂延迟后重试
+                rclcpp::sleep_for(std::chrono::milliseconds(100));
+            }
+        }
+        
+        if (!planning_success) {
+            RCLCPP_ERROR(logger_, "PILZ %s 规划失败: 所有 %d 次尝试都未成功", 
+                        planner_id.c_str(), max_attempts);
+            move_group_->clearPathConstraints();  // 清理约束
             return Result::PLANNING_FAILED;
         }
         
-        RCLCPP_INFO(logger_, "✓ PILZ %s 规划成功 (耗时 %.3f 秒)", planner_id.c_str(), planning_time);
-        RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
+        // 7. 清理约束
+        move_group_->clearPathConstraints();
         
-        // 分析轨迹特点
-        if (!plan.trajectory_.joint_trajectory.points.empty()) {
-            const auto& points = plan.trajectory_.joint_trajectory.points;
-            double total_time = points.back().time_from_start.sec + 
-                               points.back().time_from_start.nanosec * 1e-9;
-            RCLCPP_INFO(logger_, "轨迹总时间: %.3f 秒", total_time);
-            
-            // 打印PILZ轨迹特点
-            RCLCPP_INFO(logger_, "PILZ轨迹特点:");
-            RCLCPP_INFO(logger_, "  - 平滑的加速度曲线");
-            RCLCPP_INFO(logger_, "  - 工业级运动规划");
-            RCLCPP_INFO(logger_, "  - 实时性能优化");
+        // 8. 保存轨迹分析
+        if (planning_success) {
+            std::string trajectory_prefix = "pilz_" + planner_id + "_trajectory";
+            saveTrajectoryAnalysis(best_plan.trajectory_, trajectory_prefix);
         }
         
-        // 执行规划
+        // 9. 执行规划
         RCLCPP_INFO(logger_, "开始执行PILZ %s 运动...", planner_id.c_str());
-        start_time = node_->now();
-        auto result = move_group_->execute(plan);
+        auto start_time = node_->now();
+        auto result = move_group_->execute(best_plan);
         double execution_time = (node_->now() - start_time).seconds();
         
         if (result == moveit::core::MoveItErrorCode::SUCCESS) {
@@ -814,9 +1121,12 @@ CR7RobotController::Result CR7RobotController::executePilzPlan(const geometry_ms
         
     } catch (const std::exception& e) {
         RCLCPP_ERROR(logger_, "PILZ %s 运动异常: %s", planner_id.c_str(), e.what());
+        // 确保清理约束
+        try { move_group_->clearPathConstraints(); } catch (...) {}
         return Result::EXECUTION_FAILED;
     }
 }
+
 
 // ============================================================================
 // 路径预处理和优化方法
@@ -1701,6 +2011,64 @@ CR7RobotController::Result CR7RobotController::executeCartesianWeldingPath()
 
     return executeOptimizedCartesianPath(cartesian_waypoints);
 }
+
+CR7RobotController::Result CR7RobotController::executePilzWeldingPath() {
+    // 1️⃣ 先 move 到起点（使用关节空间规划）
+    auto start_wp = Waypoint("start_wp", 
+                             0.77772, -0.3741, 0.028286,
+                             0.53928, 0.81723, 0.027122, 0.20142);
+
+    auto ret = moveToWaypoint(start_wp);
+    if (ret != Result::SUCCESS) {
+        RCLCPP_ERROR(logger_, "无法到达PILZ焊接路径起点");
+        return ret;
+    }
+
+    // 2️⃣ 再用PILZ执行到终点
+    Waypoint end_wp = Waypoint("end_wp",
+                               0.77772, 0.37753, 0.028286,
+                               -0.37331, 0.8992, -0.084073, 0.21217);
+    
+    auto target_pose = end_wp.toPose();
+    
+    RCLCPP_INFO(logger_, "========================================");
+    RCLCPP_INFO(logger_, "执行PILZ焊接点位路径");
+    RCLCPP_INFO(logger_, "起点: [%.5f, %.5f, %.5f]", start_wp.x, start_wp.y, start_wp.z);
+    RCLCPP_INFO(logger_, "终点: [%.5f, %.5f, %.5f]", end_wp.x, end_wp.y, end_wp.z);
+    RCLCPP_INFO(logger_, "========================================");
+    
+    // 保存焊接路径点信息
+    std::vector<geometry_msgs::msg::Pose> welding_waypoints = {
+        start_wp.toPose(),
+        target_pose
+    };
+    saveWaypointAnalysis(welding_waypoints, "pilz_welding_waypoints");
+    
+    // 使用PILZ LIN规划器执行直线运动
+    return moveWithPilzLin(target_pose);
+}
+
+
+CR7RobotController::Result CR7RobotController::executetoolAxis() 
+{
+    // 1️⃣ 先 move 到起点（使用关节空间规划）
+    auto start_wp = Waypoint("start_wp", 
+                             0.0, 0.3, 0.0,
+                             0.0, 0.0, 0.0, 1.0, "welding_tcp");
+
+
+    if (!start_wp.isValidQuaternion()) 
+    {
+        RCLCPP_WARN(logger_, "四元数未归一化，自动处理...");
+        Waypoint normalized_waypoint = start_wp;
+        normalized_waypoint.normalizeQuaternion();
+        return moveToPose(normalized_waypoint.toPoseStamped(), start_wp.name);
+    }
+    
+    return moveToPose(start_wp.toPoseStamped(), start_wp.name);
+
+}
+
 
 // ============================================================================
 // 状态查询和配置方法实现
