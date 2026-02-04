@@ -26,9 +26,18 @@ include_directories(
   ${moveit_ros_planning_interface_INCLUDE_DIRS}
 )
 
-# 创建可执行文件
-add_executable(cr7_controller
+# 共享源文件（所有可执行文件都需要）
+set(SHARED_SOURCE_FILES
   src/cr7_robot_controller.cpp
+  src/base/cr7_base_controller.cpp
+  src/cartesian/cr7_cartesian_planner.cpp
+  src/pilz/cr7_pilz_planner.cpp
+  src/path/cr7_path_executor.cpp
+)
+
+# 创建主可执行文件
+add_executable(cr7_controller
+  ${SHARED_SOURCE_FILES}
   src/main.cpp
 )
 
@@ -37,6 +46,7 @@ ament_target_dependencies(cr7_controller
   rclcpp
   moveit_ros_planning_interface
   geometry_msgs
+  tf2_geometry_msgs
 )
 
 # 在target_link_libraries中添加
@@ -44,10 +54,53 @@ target_link_libraries(cr7_controller
   ${MOVEIT_LIBRARIES}
   tf2::tf2
   tf2_ros::tf2_ros
+  tf2_geometry_msgs::tf2_geometry_msgs
+)
+
+# 创建测试可执行文件（基本测试）
+add_executable(cr7_controller_test
+  ${SHARED_SOURCE_FILES}
+  test/cr7_controller_test.cpp
+)
+
+# 链接测试依赖
+ament_target_dependencies(cr7_controller_test
+  rclcpp
+  moveit_ros_planning_interface
+  geometry_msgs
+  tf2_geometry_msgs
+)
+
+target_link_libraries(cr7_controller_test
+  ${MOVEIT_LIBRARIES}
+  tf2::tf2
+  tf2_ros::tf2_ros
+  tf2_geometry_msgs::tf2_geometry_msgs
+)
+
+# 创建测试主入口可执行文件
+add_executable(cr7_test_main
+  ${SHARED_SOURCE_FILES}
+  test/cr7_test_main.cpp
+)
+
+# 链接测试主入口依赖
+ament_target_dependencies(cr7_test_main
+  rclcpp
+  moveit_ros_planning_interface
+  geometry_msgs
+  tf2_geometry_msgs
+)
+
+target_link_libraries(cr7_test_main
+  ${MOVEIT_LIBRARIES}
+  tf2::tf2
+  tf2_ros::tf2_ros
+  tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 # 安装目标
-install(TARGETS cr7_controller
+install(TARGETS cr7_controller cr7_controller_test cr7_test_main
   DESTINATION lib/${PROJECT_NAME}
 )
 

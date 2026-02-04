@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug cr7_robot_controller",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/../..//install/cr7_robot_controller/lib/cr7_robot_controller/cr7_controller",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/../..",
+      "environment": [
+        {
+          "name": "ROS_DOMAIN_ID",
+          "value": "0"
+        },
+        {
+          "name": "ROS_LOCALHOST_ONLY",
+          "value": "1"
+        }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "build",
+      "miDebuggerPath": "C:/MinGW/bin/gdb.exe"
+    }
+  ]
+}
