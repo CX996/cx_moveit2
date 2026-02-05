@@ -5,7 +5,7 @@
  * 实现CR7PilzPlanner类的所有方法
  */
 
-#include "cr7_robot_controller/pilz/cr7_pilz_planner.hpp"
+#include "cr7_robot_controller/planners/pilz/cr7_pilz_planner.hpp"
 #include <cmath>
 #include <chrono>
 #include <sstream>
@@ -31,8 +31,7 @@ namespace cr7_controller {
 CR7PilzPlanner::CR7PilzPlanner(
     rclcpp::Node::SharedPtr node,
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
-    rclcpp::Logger logger
-) : node_(node), move_group_(move_group), logger_(logger), config_()
+) : node_(node), move_group_(move_group), logger_(node->get_logger()), config_()
 {
     RCLCPP_INFO(logger_, "创建PILZ工业规划器");
 }

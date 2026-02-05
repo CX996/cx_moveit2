@@ -1,14 +1,15 @@
 /**
  * @file cr7_path_executor.cpp
- * @brief 预设路径执行模块实现文件
+ * @brief 测试路径执行工具实现文件
  * 
- * 实现CR7PathExecutor类的所有方法
+ * 实现CR7PathExecutor类的所有方法，用于验证机器人的基本运动能力。
  */
 
 #include <cmath>
 #include <chrono>
 
 #include "cr7_robot_controller/path/cr7_path_executor.hpp"
+#include "cr7_robot_controller/base/cr7_base_controller.hpp"
 
 using namespace std::chrono_literals;
 
@@ -21,339 +22,271 @@ namespace cr7_controller {
 /**
  * @brief 构造函数
  * @param node ROS节点指针
- * @param planning_group MoveIt规划组名称
+ * @param move_group MoveGroup接口指针
  * @param cartesian_planner 笛卡尔路径规划器指针
  * @param pilz_planner PILZ规划器指针
+ * @param ompl_planner OMPL规划器指针
  */
 CR7PathExecutor::CR7PathExecutor(
     rclcpp::Node::SharedPtr node,
-    const std::string& planning_group,
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
     std::shared_ptr<CR7CartesianPlanner> cartesian_planner,
-    std::shared_ptr<CR7PilzPlanner> pilz_planner
-) : CR7BaseController(node, planning_group), move_group_(move_group), cartesian_planner_(cartesian_planner), pilz_planner_(pilz_planner)
+    std::shared_ptr<CR7PilzPlanner> pilz_planner,
+    std::shared_ptr<CR7OMPLPlanner> ompl_planner
+) : node_(node), move_group_(move_group), cartesian_planner_(cartesian_planner), pilz_planner_(pilz_planner), ompl_planner_(ompl_planner),
+    logger_(node->get_logger())
 {
-    RCLCPP_INFO(logger_, "创建预设路径执行器");
-    this->initialized_ = true;
+    RCLCPP_INFO(logger_, "创建测试路径执行器");
 }
 
 // ============================================================================
-// 预设路径执行方法
+// 测试路径执行方法
 // ============================================================================
-
-/**
- * @brief 执行预设焊接路径
- * @return std::vector<Result> 每个路点的结果
- */
-std::vector<CR7BaseController::Result> CR7PathExecutor::executeWeldingPath()
-{
-    RCLCPP_INFO(logger_, "=======================================");
-    RCLCPP_INFO(logger_, "开始执行预设焊接路径");
-    RCLCPP_INFO(logger_, "=======================================");
-    
-    // 创建焊接路径点
-    std::vector<Waypoint> waypoints = generateWeldingPath();
-    
-    if (waypoints.empty())
-    {
-        RCLCPP_ERROR(logger_, "创建焊接路径失败");
-        return {CR7BaseController::Result::INVALID_INPUT};
-    }
-    
-    RCLCPP_INFO(logger_, "焊接路径点数量: %zu", waypoints.size());
-    
-    // 验证四元数
-    for (auto& wp : waypoints)
-    {
-        if (!wp.isValidQuaternion())
-        {
-            RCLCPP_WARN(logger_, "路点 %s 四元数未归一化，自动处理", wp.name.c_str());
-            wp.normalizeQuaternion();
-        }
-    }
-    
-    // 使用父类的 executeWaypoints 方法执行路径
-    return this->executeWaypoints(waypoints, 2.0);
-}
 
 /**
  * @brief 执行测试路径
- * @return std::vector<Result> 每个路点的结果
+ * @return std::vector<CR7BaseController::Result> 每个路点的结果
  */
 std::vector<CR7BaseController::Result> CR7PathExecutor::executeTestPath()
 {
     RCLCPP_INFO(logger_, "=======================================");
-    RCLCPP_INFO(logger_, "开始执行测试路径");
+    RCLCPP_INFO(logger_, "开始执行基本测试路径");
     RCLCPP_INFO(logger_, "=======================================");
     
-    // 创建测试路径点
-    std::vector<Waypoint> waypoints = generateTestPath();
+    // 创建一个简单的测试路径
+    std::vector<CR7BaseController::Result> results;
     
-    if (waypoints.empty())
-    {
-        RCLCPP_ERROR(logger_, "创建测试路径失败");
-        return {CR7BaseController::Result::INVALID_INPUT};
-    }
-    
-    RCLCPP_INFO(logger_, "测试路径点数量: %zu", waypoints.size());
-    
-    // 验证四元数
-    for (auto& wp : waypoints)
-    {
-        if (!wp.isValidQuaternion())
-        {
-            RCLCPP_WARN(logger_, "路点 %s 四元数未归一化，自动处理", wp.name.c_str());
-            wp.normalizeQuaternion();
+    try {
+        // 获取当前位置
+        auto current_pose = move_group_->getCurrentPose();
+        RCLCPP_INFO(logger_, "当前位置: [%.3f, %.3f, %.3f]", 
+                   current_pose.pose.position.x, current_pose.pose.position.y, current_pose.pose.position.z);
+        
+        // 创建一个简单的测试路径点
+        geometry_msgs::msg::Pose target_pose = current_pose.pose;
+        target_pose.position.z += 0.1; // 向上移动10cm
+        
+        // 优先使用OMPL规划器执行路径
+        if (ompl_planner_) {
+            RCLCPP_INFO(logger_, "使用OMPL规划器执行测试路径...");
+            auto result = ompl_planner_->moveToPose(target_pose, "test_waypoint");
+            results.push_back(result);
+        } else {
+            //  fallback到直接使用MoveGroupInterface
+            RCLCPP_INFO(logger_, "OMPL规划器未初始化，使用直接MoveGroupInterface执行测试路径...");
+            // 设置目标位置
+            move_group_->setPoseTarget(target_pose);
+            
+            // 规划运动
+            moveit::planning_interface::MoveGroupInterface::Plan plan;
+            RCLCPP_INFO(logger_, "开始规划测试路径...");
+            
+            bool success = static_cast<bool>(move_group_->plan(plan));
+            if (success) {
+                RCLCPP_INFO(logger_, "✓ 测试路径规划成功");
+                RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
+                
+                // 执行运动
+                RCLCPP_INFO(logger_, "开始执行测试路径...");
+                auto result = move_group_->execute(plan);
+                if (result == moveit::core::MoveItErrorCode::SUCCESS) {
+                    RCLCPP_INFO(logger_, "✓ 测试路径执行成功");
+                    results.push_back(CR7BaseController::Result::SUCCESS);
+                } else {
+                    RCLCPP_ERROR(logger_, "测试路径执行失败");
+                    results.push_back(CR7BaseController::Result::EXECUTION_FAILED);
+                }
+            } else {
+                RCLCPP_ERROR(logger_, "测试路径规划失败");
+                results.push_back(CR7BaseController::Result::PLANNING_FAILED);
+            }
         }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(logger_, "执行测试路径异常: %s", e.what());
+        results.push_back(CR7BaseController::Result::EXECUTION_FAILED);
     }
     
-    // 使用父类的 executeWaypoints 方法执行路径
-    return this->executeWaypoints(waypoints, 2.0);
+    return results;
 }
 
 /**
- * @brief 执行笛卡尔焊接路径
- * @return Result 规划结果
+ * @brief 执行笛卡尔测试路径
+ * @return CR7BaseController::Result 规划结果
  */
-CR7BaseController::Result CR7PathExecutor::executeCartesianWeldingPath()
+CR7BaseController::Result CR7PathExecutor::executeCartesianTestPath()
 {
     RCLCPP_INFO(logger_, "=======================================");
-    RCLCPP_INFO(logger_, "开始执行笛卡尔焊接路径");
+    RCLCPP_INFO(logger_, "开始执行笛卡尔测试路径");
     RCLCPP_INFO(logger_, "=======================================");
     
-    // 创建笛卡尔焊接路径点
-    std::vector<Waypoint> waypoints = generateCartesianWeldingPath();
-    
-    if (waypoints.empty())
-    {
-        RCLCPP_ERROR(logger_, "创建笛卡尔焊接路径失败");
-        return CR7BaseController::Result::INVALID_INPUT;
-    }
-    
-    RCLCPP_INFO(logger_, "笛卡尔焊接路径点数量: %zu", waypoints.size());
-    
-    // 使用笛卡尔路径规划器执行路径
-    if (cartesian_planner_)
-    {
-        return cartesian_planner_->executeOptimizedCartesianPath(waypoints);
-    }
-    else
-    {
-        RCLCPP_ERROR(logger_, "笛卡尔路径规划器未初始化");
-        return CR7BaseController::Result::ROBOT_NOT_READY;
-    }
-}
-
-/**
- * @brief 使用PILZ执行焊接点位路径
- * 先用关节空间移动到起点，再用PILZ执行到终点
- * @return Result 规划结果
- */
-CR7BaseController::Result CR7PathExecutor::executePilzWeldingPath()
-{
-    RCLCPP_INFO(logger_, "=======================================");
-    RCLCPP_INFO(logger_, "开始执行PILZ焊接路径");
-    RCLCPP_INFO(logger_, "=======================================");
-    
-    // 这里我们创建一个简单的焊接路径，使用PILZ LIN规划器执行
-    // 实际应用中，应该根据具体的焊接任务创建更复杂的路径
-
-    // 创建起点和终点
-    auto start_wp = Waypoint("start_wp", 
-                             0.77772, -0.3741, 0.028286,
-                             0.53928, 0.81723, 0.027122, 0.20142);
-
-    auto ret = this->moveToWaypoint(start_wp);// 先移动到起点
-    if (ret != Result::SUCCESS) {
-        RCLCPP_ERROR(logger_, "无法到达PILZ焊接路径起点");
-        return ret;
-    }
-   
-    Waypoint end_wp = Waypoint("end_wp",
-                               0.77772, 0.37753, 0.028286,
-                               -0.37331, 0.8992, -0.084073, 0.21217);
-
-    // 使用PILZ LIN规划器执行直线运动
-    if (pilz_planner_)
-    {
-        return pilz_planner_->moveWithPilzLin(end_wp.toPose());
-    }
-    else
-    {
-        RCLCPP_ERROR(logger_, "PILZ规划器未初始化");
-        return CR7BaseController::Result::ROBOT_NOT_READY;
+    try {
+        // 获取当前位置
+        auto current_pose = move_group_->getCurrentPose();
+        
+        // 创建一个简单的笛卡尔路径
+        std::vector<geometry_msgs::msg::Pose> waypoints;
+        waypoints.push_back(current_pose.pose);
+        
+        // 添加一个目标点
+        geometry_msgs::msg::Pose target_pose = current_pose.pose;
+        target_pose.position.x += 0.1; // 向前移动10cm
+        target_pose.position.y += 0.1; // 向左移动10cm
+        waypoints.push_back(target_pose);
+        
+        // 使用笛卡尔路径规划器执行路径
+        if (cartesian_planner_) {
+            // 创建路径点
+            std::vector<Waypoint> cartesian_waypoints;
+            for (size_t i = 0; i < waypoints.size(); ++i) {
+                const auto& pose = waypoints[i];
+                cartesian_waypoints.emplace_back(
+                    "test_point_" + std::to_string(i),
+                    pose.position.x, pose.position.y, pose.position.z,
+                    pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w
+                );
+            }
+            
+            // 使用优化的笛卡尔路径规划
+            return cartesian_planner_->executeOptimizedCartesianPath(cartesian_waypoints);
+        } else {
+            RCLCPP_ERROR(logger_, "笛卡尔路径规划器未初始化");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(logger_, "执行笛卡尔测试路径异常: %s", e.what());
+        return CR7BaseController::Result::EXECUTION_FAILED;
     }
 }
 
 /**
- * @brief 使用工具坐标系进行点位执行
- * @return Result 规划结果
+ * @brief 执行PILZ测试路径
+ * @return CR7BaseController::Result 规划结果
  */
-CR7BaseController::Result CR7PathExecutor::executeToolAxis()
+CR7BaseController::Result CR7PathExecutor::executePilzTestPath()
 {
     RCLCPP_INFO(logger_, "=======================================");
-    RCLCPP_INFO(logger_, "开始执行工具坐标系路径");
+    RCLCPP_INFO(logger_, "开始执行PILZ测试路径");
     RCLCPP_INFO(logger_, "=======================================");
     
-    // 创建工具坐标系路径点
-    std::vector<Waypoint> waypoints = generateToolAxisPath();
-    
-    if (waypoints.empty())
-    {
-        RCLCPP_ERROR(logger_, "创建工具坐标系路径失败");
-        return CR7BaseController::Result::INVALID_INPUT;
+    try {
+        // 获取当前位置
+        auto current_pose = move_group_->getCurrentPose();
+        
+        // 创建一个简单的目标点
+        geometry_msgs::msg::Pose target_pose = current_pose.pose;
+        target_pose.position.x += 0.1; // 向前移动10cm
+        target_pose.position.y += 0.1; // 向左移动10cm
+        
+        // 使用PILZ规划器执行直线运动
+        if (pilz_planner_) {
+            return pilz_planner_->moveWithPilzLin(target_pose);
+        } else {
+            RCLCPP_ERROR(logger_, "PILZ规划器未初始化");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(logger_, "执行PILZ测试路径异常: %s", e.what());
+        return CR7BaseController::Result::EXECUTION_FAILED;
     }
-    
-    RCLCPP_INFO(logger_, "工具坐标系路径点数量: %zu", waypoints.size());
-    
-    // 使用笛卡尔路径规划器执行路径
-    if (cartesian_planner_)
-    {
-        return cartesian_planner_->executeOptimizedCartesianPath(waypoints);
-    }
-    else
-    {
-        RCLCPP_ERROR(logger_, "笛卡尔路径规划器未初始化");
-        return CR7BaseController::Result::ROBOT_NOT_READY;
-    }
-}
-
-// ============================================================================
-// 路径创建方法
-// ============================================================================
-/**
- * @brief 生成焊接路径点
- * @return std::vector<Waypoint> 焊接路径点
- */
-std::vector<Waypoint> CR7PathExecutor::generateWeldingPath()
-{
-    std::vector<Waypoint> waypoints;
-    
-    // 创建焊接路径点
-    // 这里创建一个简单的焊接路径，实际应用中应该根据具体的焊接任务创建更复杂的路径
-    
-    // 起点
-    Waypoint start("welding_start", 0.4, 0.0, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    waypoints.push_back(start);
-    
-    // 中间点1
-    Waypoint mid1("welding_mid1", 0.45, 0.05, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    waypoints.push_back(mid1);
-    
-    // 中间点2
-    Waypoint mid2("welding_mid2", 0.5, 0.1, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    waypoints.push_back(mid2);
-    
-    // 终点
-    Waypoint end("welding_end", 0.55, 0.15, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    waypoints.push_back(end);
-    
-    return waypoints;
 }
 
 /**
- * @brief 生成测试路径点
- * @return std::vector<Waypoint> 测试路径点
+ * @brief 执行工具坐标系测试路径
+ * @return CR7BaseController::Result 规划结果
  */
-std::vector<Waypoint> CR7PathExecutor::generateTestPath()
+CR7BaseController::Result CR7PathExecutor::executeToolAxisTestPath()
 {
-    std::vector<Waypoint> waypoints;
+    RCLCPP_INFO(logger_, "=======================================");
+    RCLCPP_INFO(logger_, "开始执行工具坐标系测试路径");
+    RCLCPP_INFO(logger_, "=======================================");
     
-    // 创建测试路径点
-    // 这里创建一个简单的测试路径，用于验证机器人的基本运动能力
-    
-    // // 起点
-    // Waypoint start("test_start", 0.3, -0.2, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    // waypoints.push_back(start);
-    
-    // // 点1
-    // Waypoint point1("test_point1", 0.4, 0.0, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    // waypoints.push_back(point1);
-    
-    // // 点2
-    // Waypoint point2("test_point2", 0.3, 0.2, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    // waypoints.push_back(point2);
-    
-    // // 点3
-    // Waypoint point3("test_point3", 0.2, 0.0, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    // waypoints.push_back(point3);
-    
-    // // 回到起点
-    // waypoints.push_back(start);
-    
-    Waypoint start("tool_axis_start", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
-    waypoints.push_back(start);
-    
-    // 点1 - 沿X轴正方向移动
-    Waypoint point1("tool_axis_x_pos", 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
-    waypoints.push_back(point1);
-    
-    // 点2 - 沿Y轴正方向移动
-    Waypoint point2("tool_axis_y_pos", 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
-    waypoints.push_back(point2);
-    
-    // 点3 - 沿Z轴负方向移动
-    Waypoint point3("tool_axis_z_neg", 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
-    waypoints.push_back(point3);
-
-    
-
-    return waypoints;
+    try {
+        // 获取当前位置
+        auto current_pose = move_group_->getCurrentPose();
+        
+        // 创建一个简单的工具坐标系测试路径
+        std::vector<geometry_msgs::msg::Pose> waypoints;
+        waypoints.push_back(current_pose.pose);
+        
+        // 添加一个目标点
+        geometry_msgs::msg::Pose target_pose = current_pose.pose;
+        target_pose.position.z += 0.1; // 向上移动10cm
+        waypoints.push_back(target_pose);
+        
+        // 使用笛卡尔路径规划器执行路径
+        if (cartesian_planner_) {
+            // 创建路径点
+            std::vector<Waypoint> cartesian_waypoints;
+            for (size_t i = 0; i < waypoints.size(); ++i) {
+                const auto& pose = waypoints[i];
+                cartesian_waypoints.emplace_back(
+                    "tool_axis_test_point_" + std::to_string(i),
+                    pose.position.x, pose.position.y, pose.position.z,
+                    pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w
+                );
+            }
+            
+            // 使用优化的笛卡尔路径规划
+            return cartesian_planner_->executeOptimizedCartesianPath(cartesian_waypoints);
+        } else {
+            RCLCPP_ERROR(logger_, "笛卡尔路径规划器未初始化");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(logger_, "执行工具坐标系测试路径异常: %s", e.what());
+        return CR7BaseController::Result::EXECUTION_FAILED;
+    }
 }
 
 /**
- * @brief 生成笛卡尔焊接路径点
- * @return std::vector<Waypoint> 笛卡尔路径点
+ * @brief 执行焊接路径测试
+ * @return CR7BaseController::Result 规划结果
  */
-std::vector<Waypoint> CR7PathExecutor::generateCartesianWeldingPath()
+CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
 {
-    std::vector<Waypoint> waypoints;
+    RCLCPP_INFO(logger_, "=======================================");
+    RCLCPP_INFO(logger_, "开始执行焊接路径测试");
+    RCLCPP_INFO(logger_, "=======================================");
     
-    // 创建笛卡尔焊接路径点
-    // 这里创建一个简单的直线焊接路径，实际应用中应该根据具体的焊接任务创建更复杂的路径
-    
-    // 起点
-    Waypoint start("cartesian_welding_start", 0.4, -0.1, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    waypoints.push_back(start);
-    
-    // 终点
-    Waypoint end("cartesian_welding_end", 0.6, 0.1, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    waypoints.push_back(end);
-    
-    return waypoints;
-}
-
-    /**
-     * @brief 生成工具坐标系路径点
-     * @return std::vector<Waypoint> 工具坐标系路径点
-     */
-std::vector<Waypoint> CR7PathExecutor::generateToolAxisPath()
-{
-    std::vector<Waypoint> waypoints;
-    
-    // 创建工具坐标系路径点
-    // 这里创建一个简单的工具坐标系路径，用于验证工具坐标系的运动能力
-    
-    // 起点
-    Waypoint start("tool_axis_start", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
-    waypoints.push_back(start);
-    
-    // 点1 - 沿X轴正方向移动
-    Waypoint point1("tool_axis_x_pos", 0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
-    waypoints.push_back(point1);
-    
-    // 点2 - 沿Y轴正方向移动
-    Waypoint point2("tool_axis_y_pos", 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
-    waypoints.push_back(point2);
-    
-    // 点3 - 沿Z轴负方向移动
-    Waypoint point3("tool_axis_z_neg", 0.1, 0.1, -0.1, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
-    waypoints.push_back(point3);
-    
-    // 回到起点
-    waypoints.push_back(start);
-    
-    return waypoints;
+    try {
+        // 创建特定的焊接路径点
+        // 起点
+        auto start_wp = Waypoint("start_wp", 
+                               0.77772, -0.3741, 0.028286, 
+                               0.53928, 0.81723, 0.027122, 0.20142); 
+        
+        // 终点
+        Waypoint end_wp = Waypoint("end_wp",
+                                  0.77772, 0.37753, 0.028286,
+                                  -0.37331, 0.8992, -0.084073, 0.21217);
+        
+        // 创建焊接路径
+        std::vector<Waypoint> welding_waypoints;
+        welding_waypoints.push_back(start_wp);
+        welding_waypoints.push_back(end_wp);
+        
+        RCLCPP_INFO(logger_, "焊接路径点数量: %zu", welding_waypoints.size());
+        RCLCPP_INFO(logger_, "起点位置: [%.3f, %.3f, %.3f]", 
+                   start_wp.x, start_wp.y, start_wp.z);
+        RCLCPP_INFO(logger_, "终点位置: [%.3f, %.3f, %.3f]", 
+                   end_wp.x, end_wp.y, end_wp.z);
+        
+        // 使用笛卡尔路径规划器执行路径
+        if (cartesian_planner_) {
+            // 使用优化的笛卡尔路径规划
+            return cartesian_planner_->executeOptimizedCartesianPath(welding_waypoints);
+        } else if (pilz_planner_) {
+            // 使用PILZ规划器执行路径
+            RCLCPP_INFO(logger_, "使用PILZ规划器执行焊接路径测试");
+            return pilz_planner_->moveWithPilzLin(end_wp.toPose());
+        } else {
+            RCLCPP_ERROR(logger_, "没有可用的规划器");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(logger_, "执行焊接路径测试异常: %s", e.what());
+        return CR7BaseController::Result::EXECUTION_FAILED;
+    }
 }
 
 } // namespace cr7_controller

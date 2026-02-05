@@ -7,11 +7,6 @@
  */
 #include <cmath>
 #include <chrono>
-#include <sstream>
-#include <iomanip>
-#include <algorithm>
-#include <limits>
-#include <fstream>
 
 #include "cr7_robot_controller/cr7_robot_controller.hpp"
 
@@ -28,6 +23,7 @@ CR7RobotController::CR7RobotController(rclcpp::Node::SharedPtr node,
     : CR7BaseController(node, planning_group)
     , cartesian_planner_(nullptr)
     , pilz_planner_(nullptr)
+    , ompl_planner_(nullptr)
     , path_executor_(nullptr)
 {
     RCLCPP_INFO(logger_, "创建CR7机器人控制器");
@@ -36,16 +32,20 @@ CR7RobotController::CR7RobotController(rclcpp::Node::SharedPtr node,
     try
     {
         // 初始化笛卡尔路径规划器
-        cartesian_planner_ = std::make_shared<CR7CartesianPlanner>(node_, planning_group, logger_);
+        cartesian_planner_ = std::make_shared<CR7CartesianPlanner>(node_, move_group_);
         RCLCPP_INFO(logger_, "笛卡尔路径规划器初始化成功");
         
         // 初始化PILZ工业规划器
-        pilz_planner_ = std::make_shared<CR7PilzPlanner>(node_, move_group_, logger_);
+        pilz_planner_ = std::make_shared<CR7PilzPlanner>(node_, move_group_);
         RCLCPP_INFO(logger_, "PILZ工业规划器初始化成功");
         
-        // 初始化预设路径执行器
-        path_executor_ = std::make_shared<CR7PathExecutor>(node_, planning_group, move_group_, cartesian_planner_, pilz_planner_);
-        RCLCPP_INFO(logger_, "预设路径执行器初始化成功");
+        // 初始化OMPL规划器
+        ompl_planner_ = std::make_shared<CR7OMPLPlanner>(node_, move_group_);
+        RCLCPP_INFO(logger_, "OMPL规划器初始化成功");
+        
+        // 初始化测试路径执行器
+        path_executor_ = std::make_shared<CR7PathExecutor>(node_, move_group_, cartesian_planner_, pilz_planner_, ompl_planner_);
+        RCLCPP_INFO(logger_, "测试路径执行器初始化成功");
         
     } 
     catch (const std::exception& e) 
@@ -166,21 +166,7 @@ CR7RobotController::Result CR7RobotController::moveWithPilzCirc(const geometry_m
     return pilz_planner_->moveWithPilzCirc(intermediate_pose, target_pose, config);
 }
 
-std::vector<CR7RobotController::Result> CR7RobotController::executeWeldingPath()
-{
-    if (!initialized_) {
-        RCLCPP_ERROR(logger_, "控制器未初始化");
-        return {Result::ROBOT_NOT_READY};
-    }
-    
-    if (!path_executor_) {
-        RCLCPP_ERROR(logger_, "路径执行器未初始化");
-        return {Result::ROBOT_NOT_READY};
-    }
-    
-    return path_executor_->executeWeldingPath();
-}
-
+// 测试路径执行方法 - 委托给路径执行器模块
 std::vector<CR7RobotController::Result> CR7RobotController::executeTestPath()
 {
     if (!initialized_) {
@@ -196,7 +182,7 @@ std::vector<CR7RobotController::Result> CR7RobotController::executeTestPath()
     return path_executor_->executeTestPath();
 }
 
-CR7RobotController::Result CR7RobotController::executeCartesianWeldingPath()
+CR7RobotController::Result CR7RobotController::executeCartesianTestPath()
 {
     if (!initialized_) {
         RCLCPP_ERROR(logger_, "控制器未初始化");
@@ -208,41 +194,52 @@ CR7RobotController::Result CR7RobotController::executeCartesianWeldingPath()
         return Result::ROBOT_NOT_READY;
     }
     
-    return path_executor_->executeCartesianWeldingPath();
+    return path_executor_->executeCartesianTestPath();
 }
 
-CR7RobotController::Result CR7RobotController::executePilzWeldingPath()
+CR7RobotController::Result CR7RobotController::executePilzTestPath()
 {
-    if (!initialized_) 
-    {
+    if (!initialized_) {
         RCLCPP_ERROR(logger_, "控制器未初始化");
         return Result::ROBOT_NOT_READY;
     }
     
-    if (!path_executor_) 
-    {
+    if (!path_executor_) {
         RCLCPP_ERROR(logger_, "路径执行器未初始化");
         return Result::ROBOT_NOT_READY;
     }
     
-    return path_executor_->executePilzWeldingPath();
+    return path_executor_->executePilzTestPath();
 }
 
-CR7RobotController::Result CR7RobotController::executeToolAxis()
+CR7RobotController::Result CR7RobotController::executeToolAxisTestPath()
 {
-    if (!initialized_) 
-    {
+    if (!initialized_) {
         RCLCPP_ERROR(logger_, "控制器未初始化");
         return Result::ROBOT_NOT_READY;
     }
     
-    if (!path_executor_) 
-    {
+    if (!path_executor_) {
         RCLCPP_ERROR(logger_, "路径执行器未初始化");
         return Result::ROBOT_NOT_READY;
     }
     
-    return path_executor_->executeToolAxis();
+    return path_executor_->executeToolAxisTestPath();
 }
+
+CR7RobotController::Result CR7RobotController::executeWeldingTestPath()
+{
+    if (!initialized_) {
+        RCLCPP_ERROR(logger_, "控制器未初始化");
+        return Result::ROBOT_NOT_READY;
+    }
+    
+    if (!path_executor_) {
+        RCLCPP_ERROR(logger_, "路径执行器未初始化");
+        return Result::ROBOT_NOT_READY;
+    }
+    
+    return path_executor_->executeWeldingTestPath();
 }
- // namespace cr7_controller
+
+} // namespace cr7_controller

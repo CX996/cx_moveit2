@@ -5,7 +5,7 @@
  * 功能：
  * 1. 初始化ROS2
  * 2. 创建机器人控制器
- * 3. 执行指定的路径规划任务
+ * 3. 执行指定的测试路径任务
  * 4. 参数化配置
  * 5. 轻量级设计，适合launch文件启动
  */
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     auto node = std::make_shared<rclcpp::Node>("cr7_controller");
 
     // ==================== 参数声明 ====================
-    node->declare_parameter<std::string>("execute_mode", "pilz_welding"); // idle, welding, cartesian_welding, pilz_welding
+    node->declare_parameter<std::string>("execute_mode", "idle"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
     node->declare_parameter<double>("init_timeout", 10.0);
 
     // 获取参数值
@@ -102,25 +102,30 @@ int main(int argc, char* argv[])
         controller->printCurrentState();
 
         // ==================== 执行指定模式 ====================
-        if (execute_mode == "welding")
+        if (execute_mode == "test")
         {
-            RCLCPP_INFO(node->get_logger(), "执行焊接路径...");
-            controller->executeWeldingPath();
-        }
-        else if (execute_mode == "cartesian_welding")
-        {
-            RCLCPP_INFO(node->get_logger(), "执行笛卡尔焊接路径...");
-            controller->executeCartesianWeldingPath();
-        }
-        else if (execute_mode == "pilz_welding")
-        {
-            RCLCPP_INFO(node->get_logger(), "执行PILZ焊接路径...");
-            controller->executePilzWeldingPath();
-        }
-        else if (execute_mode == "tool_axis")
-        {
-            RCLCPP_INFO(node->get_logger(), "执行工具坐标系路径...");
+            RCLCPP_INFO(node->get_logger(), "执行基本测试路径...");
             controller->executeTestPath();
+        }
+        else if (execute_mode == "cartesian_test")
+        {
+            RCLCPP_INFO(node->get_logger(), "执行笛卡尔测试路径...");
+            controller->executeCartesianTestPath();
+        }
+        else if (execute_mode == "pilz_test")
+        {
+            RCLCPP_INFO(node->get_logger(), "执行PILZ测试路径...");
+            controller->executePilzTestPath();
+        }
+        else if (execute_mode == "tool_axis_test")
+        {
+            RCLCPP_INFO(node->get_logger(), "执行工具坐标系测试路径...");
+            controller->executeToolAxisTestPath();
+        }
+        else if (execute_mode == "welding_test")
+        {
+            RCLCPP_INFO(node->get_logger(), "执行焊接路径测试...");
+            controller->executeWeldingTestPath();
         }
         else if (execute_mode == "idle")
         {

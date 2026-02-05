@@ -2,13 +2,7 @@
  * @file cr7_robot_controller.hpp
  * @brief CR7机器人控制器头文件
  * 
- * 这个文件定义了CR7机器人控制器的核心类，包括：
- * 1. 机器人状态监控
- * 2. 运动规划执行
- * 3. 多路点控制
- * 4. 笛卡尔路径规划（通过模块集成）
- * 5. PILZ工业规划器（通过模块集成）
- * 6. 预设路径执行（通过模块集成）
+ * 这个文件定义了CR7机器人控制器的核心类，作为协调器整合所有模块。
  */
 
 #ifndef CR7_ROBOT_CONTROLLER_HPP_
@@ -20,8 +14,9 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include "cr7_robot_controller/base/cr7_base_controller.hpp"
-#include "cr7_robot_controller/cartesian/cr7_cartesian_planner.hpp"
-#include "cr7_robot_controller/pilz/cr7_pilz_planner.hpp"
+#include "cr7_robot_controller/planners/cartesian/cr7_cartesian_planner.hpp"
+#include "cr7_robot_controller/planners/pilz/cr7_pilz_planner.hpp"
+#include "cr7_robot_controller/planners/ompl/cr7_ompl_planner.hpp"
 #include "cr7_robot_controller/path/cr7_path_executor.hpp"
 
 namespace cr7_controller {
@@ -30,13 +25,14 @@ namespace cr7_controller {
  * @class CR7RobotController
  * @brief CR7机器人控制器主类
  * 
- * 这个类继承自CR7BaseController，提供：
+ * 这个类继承自CR7BaseController，作为协调器整合所有模块，提供：
  * 1. 基础运动控制（继承自CR7BaseController）
  * 2. 笛卡尔路径规划（通过CR7CartesianPlanner模块）
  * 3. PILZ工业规划器（通过CR7PilzPlanner模块）
- * 4. 预设路径执行（通过CR7PathExecutor模块）
- * 5. 机器人状态监控
- * 6. 错误处理
+ * 4. OMPL规划器（通过CR7OmplPlanner模块）
+ * 5. 测试路径执行（通过CR7PathExecutor模块）
+ * 6. 机器人状态监控
+ * 7. 错误处理
  */
 class CR7RobotController : public CR7BaseController {
 public:
@@ -108,53 +104,39 @@ public:
                            const geometry_msgs::msg::Pose& target_pose,
                            const PilzConfig& config = PilzConfig());
     
-    /**
-     * @brief 设置PILZ规划器参数
-     * @param planner_id 规划器ID
-     * @return bool 设置成功返回true
-     */
-    bool setPilzPlanner(const std::string& planner_id);
-    
-    /**
-     * @brief 获取可用的PILZ规划器列表
-     * @return std::vector<std::string> 规划器列表
-     */
-    std::vector<std::string> getAvailablePilzPlanners() const;
-    
     // ============================================================================
-    // 预设路径执行方法（通过模块）
+    // 测试路径执行方法（通过模块）
     // ============================================================================
     
     /**
-     * @brief 执行预设焊接路径
-     * @return std::vector<Result> 每个路点的结果
-     */
-    std::vector<Result> executeWeldingPath();
-    
-    /**
-     * @brief 执行测试路径
+     * @brief 执行基本测试路径
      * @return std::vector<Result> 每个路点的结果
      */
     std::vector<Result> executeTestPath();
     
     /**
-     * @brief 执行笛卡尔焊接路径
+     * @brief 执行笛卡尔测试路径
      * @return Result 规划结果
      */
-    Result executeCartesianWeldingPath();
+    Result executeCartesianTestPath();
     
     /**
-     * @brief 使用PILZ执行焊接点位路径
-     * 先用关节空间移动到起点，再用PILZ执行到终点
+     * @brief 执行PILZ测试路径
      * @return Result 规划结果
      */
-    Result executePilzWeldingPath();
+    Result executePilzTestPath();
     
     /**
-     * @brief 使用工具坐标系进行点位执行
+     * @brief 执行工具坐标系测试路径
      * @return Result 规划结果
      */
-    Result executeToolAxis();
+    Result executeToolAxisTestPath();
+    
+    /**
+     * @brief 执行焊接路径测试
+     * @return Result 规划结果
+     */
+    Result executeWeldingTestPath();
     
     // ============================================================================
     // 配置方法
@@ -187,6 +169,15 @@ public:
         return path_executor_;
     }
     
+    /**
+     * @brief 获取OMPL规划器
+     * @return std::shared_ptr<CR7OMPLPlanner> OMPL规划器指针
+     */
+    std::shared_ptr<CR7OMPLPlanner> getOMPLPlanner() 
+    {
+        return ompl_planner_;
+    }
+    
 private:
     // ============================================================================
     // 模块成员变量
@@ -194,7 +185,8 @@ private:
     
     std::shared_ptr<CR7CartesianPlanner> cartesian_planner_; ///< 笛卡尔路径规划器
     std::shared_ptr<CR7PilzPlanner> pilz_planner_;           ///< PILZ工业规划器
-    std::shared_ptr<CR7PathExecutor> path_executor_;         ///< 预设路径执行器
+    std::shared_ptr<CR7OMPLPlanner> ompl_planner_;           ///< OMPL规划器
+    std::shared_ptr<CR7PathExecutor> path_executor_;         ///< 测试路径执行器
 };
 
 } // namespace cr7_controller

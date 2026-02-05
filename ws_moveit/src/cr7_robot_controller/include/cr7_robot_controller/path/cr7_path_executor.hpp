@@ -1,13 +1,8 @@
 /**
  * @file cr7_path_executor.hpp
- * @brief 预设路径执行模块头文件
+ * @brief 测试路径执行工具头文件
  * 
- * 这个文件定义了CR7机器人的预设路径执行功能，包括：
- * 1. 焊接路径执行
- * 2. 测试路径执行
- * 3. 笛卡尔焊接路径执行
- * 4. PILZ焊接路径执行
- * 5. 工具坐标系路径执行
+ * 这个文件定义了CR7机器人的测试路径执行功能，用于验证机器人的基本运动能力。
  */
 
 #ifndef CR7_PATH_EXECUTOR_HPP_
@@ -18,40 +13,36 @@
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
-#include <geometry_msgs/msg/pose.hpp>
 
 #include "cr7_robot_controller/base/cr7_base_controller.hpp"
-#include "cr7_robot_controller/cartesian/cr7_cartesian_planner.hpp"
-#include "cr7_robot_controller/pilz/cr7_pilz_planner.hpp"
+#include "cr7_robot_controller/planners/cartesian/cr7_cartesian_planner.hpp"
+#include "cr7_robot_controller/planners/pilz/cr7_pilz_planner.hpp"
+#include "cr7_robot_controller/planners/ompl/cr7_ompl_planner.hpp"
 
 namespace cr7_controller {
 
 /**
  * @class CR7PathExecutor
- * @brief 预设路径执行器类
+ * @brief 测试路径执行器类
  * 
- * 这个类提供：
- * 1. 焊接路径执行
- * 2. 测试路径执行
- * 3. 笛卡尔焊接路径执行
- * 4. PILZ焊接路径执行
- * 5. 工具坐标系路径执行
+ * 这个类提供各种测试路径的执行功能，用于验证机器人的运动能力。
  */
-class CR7PathExecutor : public CR7BaseController {
+class CR7PathExecutor {
 public:
     /**
      * @brief 构造函数
      * @param node ROS节点指针
-     * @param planning_group MoveIt规划组名称
+     * @param move_group MoveGroup接口指针
      * @param cartesian_planner 笛卡尔路径规划器指针
      * @param pilz_planner PILZ规划器指针
+     * @param ompl_planner OMPL规划器指针
      */
     CR7PathExecutor(
         rclcpp::Node::SharedPtr node,
-        const std::string& planning_group,
         std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
         std::shared_ptr<CR7CartesianPlanner> cartesian_planner,
-        std::shared_ptr<CR7PilzPlanner> pilz_planner
+        std::shared_ptr<CR7PilzPlanner> pilz_planner,
+        std::shared_ptr<CR7OMPLPlanner> ompl_planner
     );
     
     /**
@@ -60,65 +51,43 @@ public:
     ~CR7PathExecutor() = default;
     
     /**
-     * @brief 执行预设焊接路径
-     * @return std::vector<Result> 每个路点的结果
+     * @brief 执行基本测试路径
+     * @return std::vector<CR7BaseController::Result> 每个路点的结果
      */
-    std::vector<Result> executeWeldingPath();
+    std::vector<CR7BaseController::Result> executeTestPath();
     
     /**
-     * @brief 执行测试路径
-     * @return std::vector<Result> 每个路点的结果
+     * @brief 执行笛卡尔测试路径
+     * @return CR7BaseController::Result 规划结果
      */
-    std::vector<Result> executeTestPath();
+    CR7BaseController::Result executeCartesianTestPath();
     
     /**
-     * @brief 执行笛卡尔焊接路径
-     * @return Result 规划结果
+     * @brief 执行PILZ测试路径
+     * @return CR7BaseController::Result 规划结果
      */
-    Result executeCartesianWeldingPath();
+    CR7BaseController::Result executePilzTestPath();
     
     /**
-     * @brief 使用PILZ执行焊接点位路径
-     * 先用关节空间移动到起点，再用PILZ执行到终点
-     * @return Result 规划结果
+     * @brief 执行工具坐标系测试路径
+     * @return CR7BaseController::Result 规划结果
      */
-    Result executePilzWeldingPath();
+    CR7BaseController::Result executeToolAxisTestPath();
     
     /**
-     * @brief 使用工具坐标系进行点位执行
-     * @return Result 规划结果
+     * @brief 执行焊接路径测试
+     * @return CR7BaseController::Result 规划结果
      */
-    Result executeToolAxis();
+    CR7BaseController::Result executeWeldingTestPath();
     
 private:
-    /**
-     * @brief 生成焊接路径点
-     * @return std::vector<Waypoint> 焊接路径点
-     */
-    std::vector<Waypoint> generateWeldingPath();
-    
-    /**
-     * @brief 生成测试路径点
-     * @return std::vector<Waypoint> 测试路径点
-     */
-    std::vector<Waypoint> generateTestPath();
-    
-    /**
-     * @brief 生成笛卡尔焊接路径点
-     * @return std::vector<Waypoint> 笛卡尔路径点
-     */
-    std::vector<Waypoint> generateCartesianWeldingPath();
-    
-    /**
-     * @brief 生成工具坐标系路径点
-     * @return std::vector<Waypoint> 工具坐标系路径点
-     */
-    std::vector<Waypoint> generateToolAxisPath();
-    
     // 成员变量
+    rclcpp::Node::SharedPtr node_;
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
     std::shared_ptr<CR7CartesianPlanner> cartesian_planner_;
     std::shared_ptr<CR7PilzPlanner> pilz_planner_;
+    std::shared_ptr<CR7OMPLPlanner> ompl_planner_;
+    rclcpp::Logger logger_;
 };
 
 } // namespace cr7_controller
