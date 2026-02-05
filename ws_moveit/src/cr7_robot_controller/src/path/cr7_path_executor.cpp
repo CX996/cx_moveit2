@@ -28,11 +28,13 @@ namespace cr7_controller {
 CR7PathExecutor::CR7PathExecutor(
     rclcpp::Node::SharedPtr node,
     const std::string& planning_group,
+    std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
     std::shared_ptr<CR7CartesianPlanner> cartesian_planner,
     std::shared_ptr<CR7PilzPlanner> pilz_planner
-) : CR7BaseController(node, planning_group), cartesian_planner_(cartesian_planner), pilz_planner_(pilz_planner)
+) : CR7BaseController(node, planning_group), move_group_(move_group), cartesian_planner_(cartesian_planner), pilz_planner_(pilz_planner)
 {
     RCLCPP_INFO(logger_, "创建预设路径执行器");
+    this->initialized_ = true;
 }
 
 // ============================================================================
@@ -157,15 +159,24 @@ CR7BaseController::Result CR7PathExecutor::executePilzWeldingPath()
     // 实际应用中，应该根据具体的焊接任务创建更复杂的路径
 
     // 创建起点和终点
-    Waypoint start_waypoint("welding_start", 0.4, 0.0, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    this->moveToWaypoint(start_waypoint);  // 先移动到起点
+    auto start_wp = Waypoint("start_wp", 
+                             0.77772, -0.3741, 0.028286,
+                             0.53928, 0.81723, 0.027122, 0.20142);
 
-    Waypoint end_waypoint("welding_end", 0.55, 0.15, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    auto ret = this->moveToWaypoint(start_wp);// 先移动到起点
+    if (ret != Result::SUCCESS) {
+        RCLCPP_ERROR(logger_, "无法到达PILZ焊接路径起点");
+        return ret;
+    }
+   
+    Waypoint end_wp = Waypoint("end_wp",
+                               0.77772, 0.37753, 0.028286,
+                               -0.37331, 0.8992, -0.084073, 0.21217);
 
     // 使用PILZ LIN规划器执行直线运动
     if (pilz_planner_)
     {
-        return pilz_planner_->moveWithPilzLin(end_waypoint.toPose());
+        return pilz_planner_->moveWithPilzLin(end_wp.toPose());
     }
     else
     {
@@ -251,25 +262,42 @@ std::vector<Waypoint> CR7PathExecutor::generateTestPath()
     // 创建测试路径点
     // 这里创建一个简单的测试路径，用于验证机器人的基本运动能力
     
-    // 起点
-    Waypoint start("test_start", 0.3, -0.2, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    // // 起点
+    // Waypoint start("test_start", 0.3, -0.2, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    // waypoints.push_back(start);
+    
+    // // 点1
+    // Waypoint point1("test_point1", 0.4, 0.0, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    // waypoints.push_back(point1);
+    
+    // // 点2
+    // Waypoint point2("test_point2", 0.3, 0.2, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    // waypoints.push_back(point2);
+    
+    // // 点3
+    // Waypoint point3("test_point3", 0.2, 0.0, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    // waypoints.push_back(point3);
+    
+    // // 回到起点
+    // waypoints.push_back(start);
+    
+    Waypoint start("tool_axis_start", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
     waypoints.push_back(start);
     
-    // 点1
-    Waypoint point1("test_point1", 0.4, 0.0, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    // 点1 - 沿X轴正方向移动
+    Waypoint point1("tool_axis_x_pos", 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
     waypoints.push_back(point1);
     
-    // 点2
-    Waypoint point2("test_point2", 0.3, 0.2, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    // 点2 - 沿Y轴正方向移动
+    Waypoint point2("tool_axis_y_pos", 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
     waypoints.push_back(point2);
     
-    // 点3
-    Waypoint point3("test_point3", 0.2, 0.0, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    // 点3 - 沿Z轴负方向移动
+    Waypoint point3("tool_axis_z_neg", 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
     waypoints.push_back(point3);
+
     
-    // 回到起点
-    waypoints.push_back(start);
-    
+
     return waypoints;
 }
 
@@ -307,19 +335,19 @@ std::vector<Waypoint> CR7PathExecutor::generateToolAxisPath()
     // 这里创建一个简单的工具坐标系路径，用于验证工具坐标系的运动能力
     
     // 起点
-    Waypoint start("tool_axis_start", 0.4, 0.0, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    Waypoint start("tool_axis_start", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
     waypoints.push_back(start);
     
     // 点1 - 沿X轴正方向移动
-    Waypoint point1("tool_axis_x_pos", 0.5, 0.0, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    Waypoint point1("tool_axis_x_pos", 0.1, 0.0, 0.1, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
     waypoints.push_back(point1);
     
     // 点2 - 沿Y轴正方向移动
-    Waypoint point2("tool_axis_y_pos", 0.5, 0.1, 0.4, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    Waypoint point2("tool_axis_y_pos", 0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
     waypoints.push_back(point2);
     
     // 点3 - 沿Z轴负方向移动
-    Waypoint point3("tool_axis_z_neg", 0.5, 0.1, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
+    Waypoint point3("tool_axis_z_neg", 0.1, 0.1, -0.1, 0.0, 0.0, 0.0, 1.0, "welding_tcp");
     waypoints.push_back(point3);
     
     // 回到起点

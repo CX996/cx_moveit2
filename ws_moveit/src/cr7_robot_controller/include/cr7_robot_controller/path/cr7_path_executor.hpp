@@ -49,6 +49,7 @@ public:
     CR7PathExecutor(
         rclcpp::Node::SharedPtr node,
         const std::string& planning_group,
+        std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
         std::shared_ptr<CR7CartesianPlanner> cartesian_planner,
         std::shared_ptr<CR7PilzPlanner> pilz_planner
     );
@@ -115,6 +116,7 @@ private:
     std::vector<Waypoint> generateToolAxisPath();
     
     // 成员变量
+    std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_;
     std::shared_ptr<CR7CartesianPlanner> cartesian_planner_;
     std::shared_ptr<CR7PilzPlanner> pilz_planner_;
 };

@@ -1,0 +1,96 @@
+In file included from [01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/cr7_robot_controller.hpp:25[m[K,
+                 from [01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/cr7_robot_controller.cpp:16[m[K:
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:29:[m[K [01;31m[Kerror: [m[K‘[01m[KMoveGroupInterface[m[K’ in namespace ‘[01m[Kmoveit::core[m[K’ does not name a type
+   52 |         const moveit::core::[01;31m[KMoveGroupInterface[m[K::SharedPtr move_group,
+      |                             [01;31m[K^~~~~~~~~~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:59:[m[K [01;31m[Kerror: [m[Kexpected unqualified-id before ‘[01m[Kmove_group[m[K’
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr [01;31m[Kmove_group[m[K,
+      |                                                           [01;31m[K^~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:58:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K)[m[K’ before ‘[01m[Kmove_group[m[K’
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr[01;31m[K [m[K[32m[Kmove_group[m[K,
+      |                                                          [01;31m[K^[m[K[32m[K~~~~~~~~~~[m[K
+      |                                                          [32m[K)[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:49:20:[m[K [01;36m[Knote: [m[Kto match this ‘[01m[K([m[K’
+   49 |     CR7PathExecutor[01;36m[K([m[K
+      |                    [01;36m[K^[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:49:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ at end of member declaration
+   52 |         const moveit::core::MoveGroupInterface::[01;31m[KSharedPtr[m[K move_group,
+      |                                                 [01;31m[K^~~~~~~~~[m[K
+      |                                                          [32m[K;[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:59:[m[K [01;31m[Kerror: [m[K‘[01m[Kmove_group[m[K’ does not name a type
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr [01;31m[Kmove_group[m[K,
+      |                                                           [01;31m[K^~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:119:19:[m[K [01;31m[Kerror: [m[K‘[01m[KMoveGroupInterface[m[K’ in namespace ‘[01m[Kmoveit::core[m[K’ does not name a type
+  119 |     moveit::core::[01;31m[KMoveGroupInterface[m[K::SharedPtr move_group_;
+      |                   [01;31m[K^~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/path/cr7_path_executor.cpp:11[m[K:
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:29:[m[K [01;31m[Kerror: [m[K‘[01m[KMoveGroupInterface[m[K’ in namespace ‘[01m[Kmoveit::core[m[K’ does not name a type
+   52 |         const moveit::core::[01;31m[KMoveGroupInterface[m[K::SharedPtr move_group,
+      |                             [01;31m[K^~~~~~~~~~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:59:[m[K [01;31m[Kerror: [m[Kexpected unqualified-id before ‘[01m[Kmove_group[m[K’
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr [01;31m[Kmove_group[m[K,
+      |                                                           [01;31m[K^~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:58:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K)[m[K’ before ‘[01m[Kmove_group[m[K’
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr[01;31m[K [m[K[32m[Kmove_group[m[K,
+      |                                                          [01;31m[K^[m[K[32m[K~~~~~~~~~~[m[K
+      |                                                          [32m[K)[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:49:20:[m[K [01;36m[Knote: [m[Kto match this ‘[01m[K([m[K’
+   49 |     CR7PathExecutor[01;36m[K([m[K
+      |                    [01;36m[K^[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:49:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ at end of member declaration
+   52 |         const moveit::core::MoveGroupInterface::[01;31m[KSharedPtr[m[K move_group,
+      |                                                 [01;31m[K^~~~~~~~~[m[K
+      |                                                          [32m[K;[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:59:[m[K [01;31m[Kerror: [m[K‘[01m[Kmove_group[m[K’ does not name a type
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr [01;31m[Kmove_group[m[K,
+      |                                                           [01;31m[K^~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:119:19:[m[K [01;31m[Kerror: [m[K‘[01m[KMoveGroupInterface[m[K’ in namespace ‘[01m[Kmoveit::core[m[K’ does not name a type
+  119 |     moveit::core::[01;31m[KMoveGroupInterface[m[K::SharedPtr move_group_;
+      |                   [01;31m[K^~~~~~~~~~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/path/cr7_path_executor.cpp:31:25:[m[K [01;31m[Kerror: [m[K‘[01m[KMoveGroupInterface[m[K’ in namespace ‘[01m[Kmoveit::core[m[K’ does not name a type
+   31 |     const moveit::core::[01;31m[KMoveGroupInterface[m[K::SharedPtr move_group,
+      |                         [01;31m[K^~~~~~~~~~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/path/cr7_path_executor.cpp:31:55:[m[K [01;31m[Kerror: [m[Kexpected unqualified-id before ‘[01m[Kmove_group[m[K’
+   31 |     const moveit::core::MoveGroupInterface::SharedPtr [01;31m[Kmove_group[m[K,
+      |                                                       [01;31m[K^~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/path/cr7_path_executor.cpp:31:54:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K)[m[K’ before ‘[01m[Kmove_group[m[K’
+   31 |     const moveit::core::MoveGroupInterface::SharedPtr[01;31m[K [m[K[32m[Kmove_group[m[K,
+      |                                                      [01;31m[K^[m[K[32m[K~~~~~~~~~~[m[K
+      |                                                      [32m[K)[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/path/cr7_path_executor.cpp:28:33:[m[K [01;36m[Knote: [m[Kto match this ‘[01m[K([m[K’
+   28 | CR7PathExecutor::CR7PathExecutor[01;36m[K([m[K
+      |                                 [01;36m[K^[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/path/cr7_path_executor.cpp:31:55:[m[K [01;31m[Kerror: [m[Kexpected initializer before ‘[01m[Kmove_group[m[K’
+   31 |     const moveit::core::MoveGroupInterface::SharedPtr [01;31m[Kmove_group[m[K,
+      |                                                       [01;31m[K^~~~~~~~~~[m[K
+In file included from [01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/cr7_robot_controller.hpp:25[m[K,
+                 from [01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/main.cpp:19[m[K:
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:29:[m[K [01;31m[Kerror: [m[K‘[01m[KMoveGroupInterface[m[K’ in namespace ‘[01m[Kmoveit::core[m[K’ does not name a type
+   52 |         const moveit::core::[01;31m[KMoveGroupInterface[m[K::SharedPtr move_group,
+      |                             [01;31m[K^~~~~~~~~~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:59:[m[K [01;31m[Kerror: [m[Kexpected unqualified-id before ‘[01m[Kmove_group[m[K’
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr [01;31m[Kmove_group[m[K,
+      |                                                           [01;31m[K^~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:58:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K)[m[K’ before ‘[01m[Kmove_group[m[K’
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr[01;31m[K [m[K[32m[Kmove_group[m[K,
+      |                                                          [01;31m[K^[m[K[32m[K~~~~~~~~~~[m[K
+      |                                                          [32m[K)[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:49:20:[m[K [01;36m[Knote: [m[Kto match this ‘[01m[K([m[K’
+   49 |     CR7PathExecutor[01;36m[K([m[K
+      |                    [01;36m[K^[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:49:[m[K [01;31m[Kerror: [m[Kexpected ‘[01m[K;[m[K’ at end of member declaration
+   52 |         const moveit::core::MoveGroupInterface::[01;31m[KSharedPtr[m[K move_group,
+      |                                                 [01;31m[K^~~~~~~~~[m[K
+      |                                                          [32m[K;[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:52:59:[m[K [01;31m[Kerror: [m[K‘[01m[Kmove_group[m[K’ does not name a type
+   52 |         const moveit::core::MoveGroupInterface::SharedPtr [01;31m[Kmove_group[m[K,
+      |                                                           [01;31m[K^~~~~~~~~~[m[K
+[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/include/cr7_robot_controller/path/cr7_path_executor.hpp:119:19:[m[K [01;31m[Kerror: [m[K‘[01m[KMoveGroupInterface[m[K’ in namespace ‘[01m[Kmoveit::core[m[K’ does not name a type
+  119 |     moveit::core::[01;31m[KMoveGroupInterface[m[K::SharedPtr move_group_;
+      |                   [01;31m[K^~~~~~~~~~~~~~~~~~[m[K
+gmake[2]: *** [CMakeFiles/cr7_controller.dir/build.make:76：CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o] 错误 1
+gmake[2]: *** 正在等待未完成的任务....
+gmake[2]: *** [CMakeFiles/cr7_controller.dir/build.make:132：CMakeFiles/cr7_controller.dir/src/path/cr7_path_executor.cpp.o] 错误 1
+gmake[2]: *** [CMakeFiles/cr7_controller.dir/build.make:146：CMakeFiles/cr7_controller.dir/src/main.cpp.o] 错误 1
+gmake[1]: *** [CMakeFiles/Makefile2:137：CMakeFiles/cr7_controller.dir/all] 错误 2
+gmake: *** [Makefile:146：all] 错误 2

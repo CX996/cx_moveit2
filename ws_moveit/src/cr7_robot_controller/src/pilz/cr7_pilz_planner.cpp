@@ -389,6 +389,8 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
         move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
         
+        move_group_->clearPathConstraints();
+
         // 3. 设置PILZ特定的约束
         if (planner_id == "LIN") 
         {

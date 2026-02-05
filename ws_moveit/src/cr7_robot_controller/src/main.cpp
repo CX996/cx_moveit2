@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     auto node = std::make_shared<rclcpp::Node>("cr7_controller");
 
     // ==================== 参数声明 ====================
-    node->declare_parameter<std::string>("execute_mode", "idle"); // idle, welding, cartesian_welding, pilz_welding
+    node->declare_parameter<std::string>("execute_mode", "pilz_welding"); // idle, welding, cartesian_welding, pilz_welding
     node->declare_parameter<double>("init_timeout", 10.0);
 
     // 获取参数值
@@ -95,6 +95,7 @@ int main(int argc, char* argv[])
             RCLCPP_FATAL(node->get_logger(), "初始化失败");
             return 1;
         }
+
         RCLCPP_INFO(node->get_logger(), "✓ 初始化成功");
 
         // 打印初始状态
@@ -115,6 +116,11 @@ int main(int argc, char* argv[])
         {
             RCLCPP_INFO(node->get_logger(), "执行PILZ焊接路径...");
             controller->executePilzWeldingPath();
+        }
+        else if (execute_mode == "tool_axis")
+        {
+            RCLCPP_INFO(node->get_logger(), "执行工具坐标系路径...");
+            controller->executeTestPath();
         }
         else if (execute_mode == "idle")
         {

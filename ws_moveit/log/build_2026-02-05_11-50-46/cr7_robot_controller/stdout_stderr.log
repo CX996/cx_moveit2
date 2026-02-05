@@ -1,0 +1,29 @@
+[35m[1mConsolidate compiler generated dependencies of target cr7_controller[0m
+[ 14%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o[0m
+[ 28%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/main.cpp.o[0m
+[ 42%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/path/cr7_path_executor.cpp.o[0m
+[ 57%] [32m[1mLinking CXX executable cr7_controller[0m
+[100%] Built target cr7_controller
+-- Install configuration: ""
+-- Installing: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/lib/cr7_robot_controller/cr7_controller
+-- Set runtime path of "/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/lib/cr7_robot_controller/cr7_controller" to ""
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/launch
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/launch/cr7_controller.launch.py
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/config
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/config/kinematics.yaml
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/ament_index/resource_index/package_run_dependencies/cr7_robot_controller
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/ament_index/resource_index/parent_prefix_path/cr7_robot_controller
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/environment/ament_prefix_path.sh
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/environment/path.sh
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/environment/path.dsv
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/local_setup.bash
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/local_setup.sh
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/local_setup.zsh
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/local_setup.dsv
+-- Installing: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/package.dsv
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/ament_index/resource_index/packages/cr7_robot_controller
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/cmake/ament_cmake_export_dependencies-extras.cmake
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/cmake/cr7_robot_controllerConfig.cmake
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/cmake/cr7_robot_controllerConfig-version.cmake
+-- Up-to-date: /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/install/cr7_robot_controller/share/cr7_robot_controller/package.xml

@@ -1,0 +1,15 @@
+[0.050s] Invoking command in '/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/build/cr7_robot_controller': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --build /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/build/cr7_robot_controller -- -j8 -l8
+[0.159s] [35m[1mConsolidate compiler generated dependencies of target cr7_controller[0m
+[0.259s] [ 14%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o[0m
+[0.260s] [ 28%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/path/cr7_path_executor.cpp.o[0m
+[4.444s] [01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/cr7_robot_controller.cpp:[m[K In member function ‘[01m[Kcr7_controller::CR7BaseController::Result cr7_controller::CR7RobotController::executeToolAxis()[m[K’:
+[4.444s] [01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/cr7_robot_controller.cpp:245:43:[m[K [01;31m[Kerror: [m[Kcannot convert ‘[01m[Kstd::vector<cr7_controller::CR7BaseController::Result>[m[K’ to ‘[01m[Kcr7_controller::CR7BaseController::Result[m[K’ in return
+[4.444s]   245 |     return [01;31m[Kpath_executor_->executeToolAxis()[m[K;
+[4.444s]       |            [01;31m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~[m[K
+[4.444s]       |                                           [01;31m[K|[m[K
+[4.444s]       |                                           [01;31m[Kstd::vector<cr7_controller::CR7BaseController::Result>[m[K
+[6.596s] gmake[2]: *** [CMakeFiles/cr7_controller.dir/build.make:76：CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o] 错误 1
+[6.596s] gmake[2]: *** 正在等待未完成的任务....
+[6.731s] gmake[1]: *** [CMakeFiles/Makefile2:137：CMakeFiles/cr7_controller.dir/all] 错误 2
+[6.731s] gmake: *** [Makefile:146：all] 错误 2
+[6.734s] Invoked command in '/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/build/cr7_robot_controller' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/xionggu/moveit2_ws/install/moveit_configs_utils:/home/xionggu/moveit2_ws/install/launch_param_builder:/home/xionggu/dobot_ws_test/install/servo_action:/home/xionggu/dobot_ws_test/install/dobot_moveit:/home/xionggu/dobot_ws_test/install/dobot_demo:/opt/ros/humble HISTTIMEFORMAT= %F %T /usr/bin/cmake --build /home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/build/cr7_robot_controller -- -j8 -l8

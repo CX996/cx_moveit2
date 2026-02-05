@@ -40,11 +40,11 @@ CR7RobotController::CR7RobotController(rclcpp::Node::SharedPtr node,
         RCLCPP_INFO(logger_, "笛卡尔路径规划器初始化成功");
         
         // 初始化PILZ工业规划器
-        pilz_planner_ = std::make_shared<CR7PilzPlanner>(node_, planning_group, logger_);
+        pilz_planner_ = std::make_shared<CR7PilzPlanner>(node_, move_group_, logger_);
         RCLCPP_INFO(logger_, "PILZ工业规划器初始化成功");
         
         // 初始化预设路径执行器
-        path_executor_ = std::make_shared<CR7PathExecutor>(node_, planning_group, cartesian_planner_, pilz_planner_);
+        path_executor_ = std::make_shared<CR7PathExecutor>(node_, planning_group, move_group_, cartesian_planner_, pilz_planner_);
         RCLCPP_INFO(logger_, "预设路径执行器初始化成功");
         
     } 
