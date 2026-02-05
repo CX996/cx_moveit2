@@ -222,7 +222,7 @@ private:
     rclcpp::Node::SharedPtr node_;                      ///< ROS节点指针
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_; ///< MoveGroup接口指针
     rclcpp::Logger logger_;                            ///< 日志记录器
-    PilzConfig config_;                                 ///< PILZ规划配置
+    PilzConfig config_;                                ///< PILZ规划配置
 };
 
 } // namespace cr7_controller

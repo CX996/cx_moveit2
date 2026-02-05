@@ -244,8 +244,8 @@ CR7BaseController::Result CR7PilzPlanner::testPilzPlanner(PilzPlanner planner_ty
             break;
     }
     
-    RCLCPP_INFO(logger_, "PILZ %s 规划器测试结果: %s", 
-               planner_name.c_str(), CR7BaseController::resultToString(result).c_str());
+    // RCLCPP_INFO(logger_, "PILZ %s 规划器测试结果: %s", 
+    //            planner_name.c_str(), CR7BaseController::resultToString(result).c_str());
     
     return result;
 }

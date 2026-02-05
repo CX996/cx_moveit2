@@ -68,29 +68,8 @@ public:
      */
     CR7CartesianPlanner(
         rclcpp::Node::SharedPtr node,
-        std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group
-    );
-    
-    /**
-     * @brief 构造函数（兼容旧接口）
-     * @param node ROS节点指针
-     * @param move_group MoveGroup接口指针
-     * @param logger 日志记录器
-     */
-    CR7CartesianPlanner(
-        rclcpp::Node::SharedPtr node,
-        std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
+        const std::string& planning_group,
         rclcpp::Logger logger
-    );
-    
-    /**
-     * @brief 构造函数（使用规划组名称）
-     * @param node ROS节点指针
-     * @param planning_group MoveIt规划组名称
-     */
-    CR7CartesianPlanner(
-        rclcpp::Node::SharedPtr node,
-        const std::string& planning_group = "cr7_group"
     );
     
     /**

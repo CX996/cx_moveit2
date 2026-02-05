@@ -5,9 +5,10 @@
  * 实现CR7PathExecutor类的所有方法
  */
 
-#include "cr7_robot_controller/path/cr7_path_executor.hpp"
 #include <cmath>
 #include <chrono>
+
+#include "cr7_robot_controller/path/cr7_path_executor.hpp"
 
 using namespace std::chrono_literals;
 
@@ -154,13 +155,12 @@ CR7BaseController::Result CR7PathExecutor::executePilzWeldingPath()
     
     // 这里我们创建一个简单的焊接路径，使用PILZ LIN规划器执行
     // 实际应用中，应该根据具体的焊接任务创建更复杂的路径
-    
+
     // 创建起点和终点
     Waypoint start_waypoint("welding_start", 0.4, 0.0, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    waypoints.push_back(start);
+    this->moveToWaypoint(start_waypoint);  // 先移动到起点
 
     Waypoint end_waypoint("welding_end", 0.55, 0.15, 0.3, 0.0, 0.7071, 0.0, 0.7071, "base_link");
-    waypoints.push_back(end);
 
     // 使用PILZ LIN规划器执行直线运动
     if (pilz_planner_)

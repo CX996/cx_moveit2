@@ -30,8 +30,9 @@ namespace cr7_controller {
  */
 CR7CartesianPlanner::CR7CartesianPlanner(
     rclcpp::Node::SharedPtr node,
-    const std::string& planning_group
-) : CR7BaseController(node, planning_group), config_()
+    const std::string& planning_group,
+    rclcpp::Logger logger)   
+    : CR7BaseController(node, planning_group), config_()
 {
     RCLCPP_INFO(logger_, "创建笛卡尔路径规划器");
 }
