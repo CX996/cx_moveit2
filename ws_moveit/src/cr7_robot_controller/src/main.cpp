@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     auto node = std::make_shared<rclcpp::Node>("cr7_controller");
 
     // ==================== 参数声明 ====================
-    node->declare_parameter<std::string>("execute_mode", "idle"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
+    node->declare_parameter<std::string>("execute_mode", "tool_axis_test"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
     node->declare_parameter<double>("init_timeout", 10.0);
 
     // 获取参数值

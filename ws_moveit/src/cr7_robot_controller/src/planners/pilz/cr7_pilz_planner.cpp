@@ -30,7 +30,7 @@ namespace cr7_controller {
  */
 CR7PilzPlanner::CR7PilzPlanner(
     rclcpp::Node::SharedPtr node,
-    std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
+    std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group
 ) : node_(node), move_group_(move_group), logger_(node->get_logger()), config_()
 {
     RCLCPP_INFO(logger_, "创建PILZ工业规划器");

@@ -141,7 +141,9 @@ std::vector<CR7BaseController::Result> CR7OMPLPlanner::executeWaypoints(
         if (i < waypoints.size() - 1 && delay_seconds > 0) 
         {
             RCLCPP_INFO(logger_, "等待 %.1f 秒...", delay_seconds);
-            rclcpp::sleep_for(std::chrono::duration<double>(delay_seconds));
+            // 方法1：使用 duration_cast
+            rclcpp::sleep_for(std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::duration<double>(delay_seconds)));
         }
     }
     

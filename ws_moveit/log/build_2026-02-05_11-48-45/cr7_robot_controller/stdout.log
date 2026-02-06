@@ -1,4 +1,0 @@
-[35m[1mConsolidate compiler generated dependencies of target cr7_controller[0m
-[ 28%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/path/cr7_path_executor.cpp.o[0m
-[ 42%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/main.cpp.o[0m
-[ 42%] [32mBuilding CXX object CMakeFiles/cr7_controller.dir/src/cr7_robot_controller.cpp.o[0m

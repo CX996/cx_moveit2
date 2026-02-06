@@ -134,10 +134,12 @@ CR7BaseController::Result CR7PathExecutor::executeCartesianTestPath()
         waypoints.push_back(target_pose);
         
         // 使用笛卡尔路径规划器执行路径
-        if (cartesian_planner_) {
+        if (cartesian_planner_) 
+        {
             // 创建路径点
             std::vector<Waypoint> cartesian_waypoints;
-            for (size_t i = 0; i < waypoints.size(); ++i) {
+            for (size_t i = 0; i < waypoints.size(); ++i) 
+            {
                 const auto& pose = waypoints[i];
                 cartesian_waypoints.emplace_back(
                     "test_point_" + std::to_string(i),
@@ -147,8 +149,10 @@ CR7BaseController::Result CR7PathExecutor::executeCartesianTestPath()
             }
             
             // 使用优化的笛卡尔路径规划
-            return cartesian_planner_->executeOptimizedCartesianPath(cartesian_waypoints);
-        } else {
+            return cartesian_planner_->executeCartesianPath(cartesian_waypoints);
+        } 
+        else 
+        {
             RCLCPP_ERROR(logger_, "笛卡尔路径规划器未初始化");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
@@ -178,13 +182,18 @@ CR7BaseController::Result CR7PathExecutor::executePilzTestPath()
         target_pose.position.y += 0.1; // 向左移动10cm
         
         // 使用PILZ规划器执行直线运动
-        if (pilz_planner_) {
+        if (pilz_planner_) 
+        {
             return pilz_planner_->moveWithPilzLin(target_pose);
-        } else {
+        } 
+        else 
+        {
             RCLCPP_ERROR(logger_, "PILZ规划器未初始化");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
-    } catch (const std::exception& e) {
+    } 
+    catch (const std::exception& e) 
+    {
         RCLCPP_ERROR(logger_, "执行PILZ测试路径异常: %s", e.what());
         return CR7BaseController::Result::EXECUTION_FAILED;
     }
@@ -200,39 +209,63 @@ CR7BaseController::Result CR7PathExecutor::executeToolAxisTestPath()
     RCLCPP_INFO(logger_, "开始执行工具坐标系测试路径");
     RCLCPP_INFO(logger_, "=======================================");
     
-    try {
+    try 
+    {
         // 获取当前位置
-        auto current_pose = move_group_->getCurrentPose();
+        // auto current_pose = move_group_->getCurrentPose();
         
         // 创建一个简单的工具坐标系测试路径
         std::vector<geometry_msgs::msg::Pose> waypoints;
-        waypoints.push_back(current_pose.pose);
+        geometry_msgs::msg::Pose current_pose = geometry_msgs::msg::Pose();
+        current_pose.position.x = 0.0;
+        current_pose.position.y = 0.0;
+        current_pose.position.z = 0.0;
+        current_pose.orientation.x = 0.0;
+        current_pose.orientation.y = 0.0;
+        current_pose.orientation.z = 0.0;
+        current_pose.orientation.w = 1.0; // 单位四元数表示无旋转
+        waypoints.push_back(current_pose);
         
         // 添加一个目标点
-        geometry_msgs::msg::Pose target_pose = current_pose.pose;
+        // geometry_msgs::msg::Pose target_pose = current_pose.pose;
+        geometry_msgs::msg::Pose target_pose = geometry_msgs::msg::Pose();
+        target_pose.position.x = 0.0;
+        target_pose.position.y = 0.0;
+        target_pose.position.z = 0.0;
+        target_pose.orientation.x = 0.0;
+        target_pose.orientation.y = 0.0;
+        target_pose.orientation.z = 0.0;
+        target_pose.orientation.w = 1.0; // 单位四元数表示无旋转
+
         target_pose.position.z += 0.1; // 向上移动10cm
         waypoints.push_back(target_pose);
         
         // 使用笛卡尔路径规划器执行路径
-        if (cartesian_planner_) {
+        if (cartesian_planner_) 
+        {
             // 创建路径点
             std::vector<Waypoint> cartesian_waypoints;
-            for (size_t i = 0; i < waypoints.size(); ++i) {
+            for (size_t i = 0; i < waypoints.size(); ++i) 
+            {
                 const auto& pose = waypoints[i];
                 cartesian_waypoints.emplace_back(
                     "tool_axis_test_point_" + std::to_string(i),
                     pose.position.x, pose.position.y, pose.position.z,
-                    pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w
-                );
+                    pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w, "welding_tcp"
+                );// 设置为工具坐标系
             }
             
             // 使用优化的笛卡尔路径规划
-            return cartesian_planner_->executeOptimizedCartesianPath(cartesian_waypoints);
-        } else {
+            return cartesian_planner_->executeCartesianPath(cartesian_waypoints);
+        } 
+        else 
+        {
             RCLCPP_ERROR(logger_, "笛卡尔路径规划器未初始化");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
-    } catch (const std::exception& e) {
+    } 
+    catch (const std::exception& e) 
+    {
         RCLCPP_ERROR(logger_, "执行工具坐标系测试路径异常: %s", e.what());
         return CR7BaseController::Result::EXECUTION_FAILED;
     }
@@ -272,18 +305,25 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
                    end_wp.x, end_wp.y, end_wp.z);
         
         // 使用笛卡尔路径规划器执行路径
-        if (cartesian_planner_) {
+        if (cartesian_planner_) 
+        {
             // 使用优化的笛卡尔路径规划
-            return cartesian_planner_->executeOptimizedCartesianPath(welding_waypoints);
-        } else if (pilz_planner_) {
+            return cartesian_planner_->executeCartesianPath(welding_waypoints);
+        } 
+        else if (pilz_planner_) 
+        {
             // 使用PILZ规划器执行路径
             RCLCPP_INFO(logger_, "使用PILZ规划器执行焊接路径测试");
             return pilz_planner_->moveWithPilzLin(end_wp.toPose());
-        } else {
+        } 
+        else 
+        {
             RCLCPP_ERROR(logger_, "没有可用的规划器");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
-    } catch (const std::exception& e) {
+    } 
+    catch (const std::exception& e) 
+    {
         RCLCPP_ERROR(logger_, "执行焊接路径测试异常: %s", e.what());
         return CR7BaseController::Result::EXECUTION_FAILED;
     }

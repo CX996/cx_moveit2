@@ -1,4 +1,0 @@
-[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/path/cr7_path_executor.cpp:[m[K In member function ‘[01m[Kcr7_controller::CR7BaseController::Result cr7_controller::CR7PathExecutor::executeToolAxis()[m[K’:
-[01m[K/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/src/path/cr7_path_executor.cpp:211:1:[m[K [01;35m[Kwarning: [m[Kcontrol reaches end of non-void function [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wreturn-type-Wreturn-type]8;;[m[K]
-  211 | [01;35m[K}[m[K
-      | [01;35m[K^[m[K

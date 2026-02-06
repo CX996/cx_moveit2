@@ -81,8 +81,7 @@ public:
      */
     CR7PilzPlanner(
         rclcpp::Node::SharedPtr node,
-        std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group
-    );
+        std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group);
     
     /**
      * @brief 析构函数

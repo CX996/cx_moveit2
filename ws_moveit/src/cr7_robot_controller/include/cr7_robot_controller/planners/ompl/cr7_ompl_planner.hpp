@@ -20,6 +20,11 @@
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <geometry_msgs/msg/pose.hpp>
 
+// 添加TF2头文件
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
 #include "cr7_robot_controller/base/cr7_base_controller.hpp"
 
 namespace cr7_controller {

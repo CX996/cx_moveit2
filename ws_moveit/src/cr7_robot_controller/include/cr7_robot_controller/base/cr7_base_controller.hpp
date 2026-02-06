@@ -187,8 +187,6 @@ protected:
     std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group_; ///< MoveIt接口
     bool initialized_;                                      ///< 初始化标志
     rclcpp::Logger logger_;                                 ///< 日志记录器
-
-
     
     // 规划器实例
     std::shared_ptr<CR7OMPLPlanner> ompl_planner_; ///< OMPL规划器

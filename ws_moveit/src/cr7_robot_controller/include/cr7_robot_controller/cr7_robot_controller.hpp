@@ -56,14 +56,7 @@ public:
      */
     Result executeCartesianPath(const std::vector<Waypoint>& waypoints,
                                const CartesianPathConfig& config);
-    
-    /**
-     * @brief 执行优化的笛卡尔路径（推荐使用）
-     * @param waypoints 路径点序列
-     * @return Result 规划结果
-     */
-    Result executeOptimizedCartesianPath(const std::vector<Waypoint>& waypoints);
-    
+
     // ============================================================================
     // PILZ工业规划器方法（通过模块）
     // ============================================================================

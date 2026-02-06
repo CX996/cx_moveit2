@@ -34,6 +34,9 @@ set(SHARED_SOURCE_FILES
   src/planners/cartesian/cr7_cartesian_planner.cpp
   src/planners/pilz/cr7_pilz_planner.cpp
   src/path/cr7_path_executor.cpp
+  # 确保包含 utils 目录下的文件
+  src/utils/pose_utils.cpp
+  src/utils/trajectory_analyzer.cpp
 )
 
 # 创建主可执行文件

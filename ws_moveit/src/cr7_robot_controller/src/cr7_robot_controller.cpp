@@ -78,24 +78,6 @@ CR7RobotController::Result CR7RobotController::executeCartesianPath(
     return cartesian_planner_->executeCartesianPath(waypoints, config);
 }
 
-// 优化的笛卡尔路径规划方法
-CR7RobotController::Result CR7RobotController::executeOptimizedCartesianPath(
-    const std::vector<Waypoint>& waypoints)
-{
-    
-    if (!initialized_) {
-        RCLCPP_ERROR(logger_, "控制器未初始化");
-        return Result::ROBOT_NOT_READY;
-    }
-    
-    if (!cartesian_planner_) {
-        RCLCPP_ERROR(logger_, "笛卡尔路径规划器未初始化");
-        return Result::ROBOT_NOT_READY;
-    }
-    
-    return cartesian_planner_->executeOptimizedCartesianPath(waypoints);
-}
-
 /**
  * @brief 测试PILZ规划器功能
  * @param planner_type 规划器类型
