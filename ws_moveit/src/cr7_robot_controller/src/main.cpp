@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     auto node = std::make_shared<rclcpp::Node>("cr7_controller");
 
     // ==================== 参数声明 ====================
-    node->declare_parameter<std::string>("execute_mode", "tool_axis_test"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
+    node->declare_parameter<std::string>("execute_mode", "pilz_test"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
     node->declare_parameter<double>("init_timeout", 10.0);
 
     // 获取参数值
@@ -164,6 +164,9 @@ int main(int argc, char* argv[])
             controller->clearConstraints();
             
             // 测试2: 平面约束
+            target_pose.position.x += 0.1; // 向前移动10cm
+            target_pose.position.y += 0.1; // 向左移动10cm
+
             RCLCPP_INFO(node->get_logger(), "\n=======================================\n");
             RCLCPP_INFO(node->get_logger(), "测试2: 平面约束");
             RCLCPP_INFO(node->get_logger(), "=======================================\n");
@@ -186,6 +189,9 @@ int main(int argc, char* argv[])
             controller->clearConstraints();
             
             // 测试3: 直线约束
+            target_pose.position.x -= 0.1; // 向前移动10cm
+            target_pose.position.y -= 0.1; // 向左移动10cm
+
             RCLCPP_INFO(node->get_logger(), "\n=======================================\n");
             RCLCPP_INFO(node->get_logger(), "测试3: 直线约束");
             RCLCPP_INFO(node->get_logger(), "=======================================\n");
@@ -213,6 +219,8 @@ int main(int argc, char* argv[])
             controller->clearConstraints();
             
             // 测试4: 姿态约束
+            target_pose.position.x -= 0.1; // 向前移动10cm
+            target_pose.position.y -= 0.1; // 向左移动10cm
             RCLCPP_INFO(node->get_logger(), "\n=======================================\n");
             RCLCPP_INFO(node->get_logger(), "测试4: 姿态约束");
             RCLCPP_INFO(node->get_logger(), "=======================================\n");

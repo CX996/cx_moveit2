@@ -394,42 +394,42 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         // 3. 设置PILZ特定的约束
         if (planner_id == "LIN") 
         {
-            // 为直线运动设置约束
-            moveit_msgs::msg::Constraints path_constraints;
+            // // 为直线运动设置约束
+            // moveit_msgs::msg::Constraints path_constraints;
             
-            // 位置约束 - 直线运动
-            moveit_msgs::msg::PositionConstraint pos_constraint;
-            pos_constraint.header.frame_id = move_group_->getPlanningFrame();
-            pos_constraint.link_name = move_group_->getEndEffectorLink();
-            pos_constraint.weight = 1.0;
+            // // 位置约束 - 直线运动
+            // moveit_msgs::msg::PositionConstraint pos_constraint;
+            // pos_constraint.header.frame_id = move_group_->getPlanningFrame();
+            // pos_constraint.link_name = move_group_->getEndEffectorLink();
+            // pos_constraint.weight = 1.0;
             
-            // 创建球形约束区域
-            shape_msgs::msg::SolidPrimitive sphere;
-            sphere.type = shape_msgs::msg::SolidPrimitive::SPHERE;
-            sphere.dimensions.resize(1);
-            sphere.dimensions[0] = config.max_deviation;  // 允许的最大偏差
+            // // 创建球形约束区域
+            // shape_msgs::msg::SolidPrimitive sphere;
+            // sphere.type = shape_msgs::msg::SolidPrimitive::SPHERE;
+            // sphere.dimensions.resize(1);
+            // sphere.dimensions[0] = config.max_deviation;  // 允许的最大偏差
             
-            geometry_msgs::msg::Pose sphere_pose;
-            sphere_pose.orientation.w = 1.0;
+            // geometry_msgs::msg::Pose sphere_pose;
+            // sphere_pose.orientation.w = 1.0;
             
-            // pos_constraint.constraint_region.primitives.push_back(sphere);
-            // pos_constraint.constraint_region.primitive_poses.push_back(sphere_pose);
+            // // pos_constraint.constraint_region.primitives.push_back(sphere);
+            // // pos_constraint.constraint_region.primitive_poses.push_back(sphere_pose);
             
-            // 方向约束 - 保持末端朝向
-            auto current_pose = move_group_->getCurrentPose().pose;
-            moveit_msgs::msg::OrientationConstraint orient_constraint;
-            orient_constraint.header.frame_id = move_group_->getPlanningFrame();
-            orient_constraint.link_name = move_group_->getEndEffectorLink();
-            orient_constraint.orientation = current_pose.orientation;
-            orient_constraint.absolute_x_axis_tolerance = config.orientation_tolerance;
-            orient_constraint.absolute_y_axis_tolerance = config.orientation_tolerance;
-            orient_constraint.absolute_z_axis_tolerance = config.orientation_tolerance;
-            orient_constraint.weight = 1.0;
+            // // 方向约束 - 保持末端朝向
+            // auto current_pose = move_group_->getCurrentPose().pose;
+            // moveit_msgs::msg::OrientationConstraint orient_constraint;
+            // orient_constraint.header.frame_id = move_group_->getPlanningFrame();
+            // orient_constraint.link_name = move_group_->getEndEffectorLink();
+            // orient_constraint.orientation = current_pose.orientation;
+            // orient_constraint.absolute_x_axis_tolerance = config.orientation_tolerance;
+            // orient_constraint.absolute_y_axis_tolerance = config.orientation_tolerance;
+            // orient_constraint.absolute_z_axis_tolerance = config.orientation_tolerance;
+            // orient_constraint.weight = 1.0;
             
-            path_constraints.position_constraints.push_back(pos_constraint);
+            // path_constraints.position_constraints.push_back(pos_constraint);
             // path_constraints.orientation_constraints.push_back(orient_constraint);
             
-            move_group_->setPathConstraints(path_constraints);
+            // move_group_->setPathConstraints(path_constraints);
             RCLCPP_INFO(logger_, "已设置直线约束，最大偏差: %.3f m", config.max_deviation);
         }
         
@@ -463,13 +463,14 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
                 if (planner_id == "LIN") {
                     bool is_linear = true;
                     const auto& points = plan.trajectory_.joint_trajectory.points;
-                    if (points.size() > 2) {
+                    if (points.size() > 2) 
+                    {
                         // 获取当前位姿作为起点
                         auto start_pose = getCurrentPose();
-                        
+
                         // 使用工具类中的isTrajectoryLinear方法检查轨迹是否是直线
                         is_linear = cr7_controller::utils::TrajectoryAnalyzer::isTrajectoryLinear(
-                            plan.trajectory_, start_pose, target_pose, config.max_deviation, move_group_, logger_
+                            plan.trajectory_, start_pose, target_pose, config.max_deviation * 10, move_group_, logger_
                         );
                     }
                     
@@ -509,7 +510,11 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         if (planning_success) 
         {
             std::string trajectory_prefix = "pilz_" + planner_id + "_trajectory";
-            saveTrajectoryAnalysis(best_plan.trajectory_, trajectory_prefix);
+            cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(best_plan.trajectory_, trajectory_prefix, logger_);
+        }
+        else 
+        {
+            RCLCPP_WARN(logger_, "未生成有效轨迹，跳过保存分析");
         }
         
         // 9. 执行规划

@@ -324,7 +324,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         {
             // 使用OMPL规划器执行路径
             RCLCPP_INFO(logger_, "使用OMPL规划器执行焊接路径测试");
-            return ompl_planner_->executeWaypoints(welding_waypoints);
+            ompl_planner_->executeWaypoints(welding_waypoints);
+            return CR7BaseController::Result::SUCCESS;
         } 
         else if (pilz_planner_) 
         {

@@ -247,7 +247,19 @@ bool TrajectoryAnalyzer::isTrajectoryLinear(
             try
             {
                 const std::string& end_effector_link = move_group->getEndEffectorLink();
-                kinematic_state->getGlobalLinkTransform(end_effector_link).copyToPose(end_effector_pose.pose);
+                Eigen::Isometry3d transform = kinematic_state->getGlobalLinkTransform(end_effector_link);
+                
+                // 从 Eigen::Isometry3d 转换到 geometry_msgs::msg::Pose
+                end_effector_pose.pose.position.x = transform.translation().x();
+                end_effector_pose.pose.position.y = transform.translation().y();
+                end_effector_pose.pose.position.z = transform.translation().z();
+                
+                Eigen::Quaterniond q(transform.rotation());
+                end_effector_pose.pose.orientation.x = q.x();
+                end_effector_pose.pose.orientation.y = q.y();
+                end_effector_pose.pose.orientation.z = q.z();
+                end_effector_pose.pose.orientation.w = q.w();
+                
                 end_effector_pose.header.frame_id = move_group->getPlanningFrame();
                 trajectory_poses.push_back(end_effector_pose.pose);
             }
@@ -293,6 +305,9 @@ bool TrajectoryAnalyzer::isTrajectoryLinear(
     
     line_vector.normalize();
     
+    double distance = 0.0;
+    int iCount = 0;
+    int iErrorCount = 0;
     // 检查每个点到直线的距离
     for (const auto& pose : trajectory_poses)
     {
@@ -304,13 +319,24 @@ bool TrajectoryAnalyzer::isTrajectoryLinear(
         
         // 计算点到直线的向量
         Eigen::Vector3d point_vector = point - start_point;
+        iCount++;
         
         // 计算点到直线的距离
-        double distance = (point_vector - point_vector.dot(line_vector) * line_vector).norm();
+        distance = (point_vector - point_vector.dot(line_vector) * line_vector).norm();
         
         if (distance > max_deviation)
         {
-            RCLCPP_WARN(logger, "轨迹偏离直线: 距离 = %.6f m, 最大允许 = %.6f m", distance, max_deviation);
+            RCLCPP_WARN(logger, "轨迹偏离直线: 距离 = %.6f m, 最大允许 = %.6f m, 错误点位 = %d", distance, max_deviation, iCount);
+            iErrorCount++;
+        }
+        else
+        {
+            RCLCPP_INFO(logger, "轨迹点距离直线: %.6f m (在允许范围内)", distance);
+        }
+
+        if (iErrorCount > 10) // 如果错误点超过10个，认为轨迹不是直线
+        {
+            RCLCPP_WARN(logger, "轨迹偏离直线过多，认为不是直线轨迹");
             return false;
         }
     }

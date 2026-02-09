@@ -53,10 +53,10 @@ struct PilzConfig {
           velocity_scale(0.1),
           acceleration_scale(0.3),
           blending_radius(0.1),
-          max_deviation(0.005),     // 1mm偏差
-          orientation_tolerance(0.01), // 约0.58度
-          goal_position_tolerance(0.005),  // 5mm
-          goal_orientation_tolerance(0.01)  // 约0.57度
+          max_deviation(0.001),     // 1mm偏差
+          orientation_tolerance(0.001), // 约0.057度
+          goal_position_tolerance(0.001),  // 1mm
+          goal_orientation_tolerance(0.001)  // 约0.057度
     {
     }
 };
