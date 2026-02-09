@@ -67,11 +67,14 @@ std::vector<CR7BaseController::Result> CR7PathExecutor::executeTestPath()
         target_pose.position.z += 0.1; // 向上移动10cm
         
         // 优先使用OMPL规划器执行路径
-        if (ompl_planner_) {
+        if (ompl_planner_) 
+        {
             RCLCPP_INFO(logger_, "使用OMPL规划器执行测试路径...");
             auto result = ompl_planner_->moveToPose(target_pose, "test_waypoint");
             results.push_back(result);
-        } else {
+        } 
+        else 
+        {
             //  fallback到直接使用MoveGroupInterface
             RCLCPP_INFO(logger_, "OMPL规划器未初始化，使用直接MoveGroupInterface执行测试路径...");
             // 设置目标位置
@@ -82,26 +85,34 @@ std::vector<CR7BaseController::Result> CR7PathExecutor::executeTestPath()
             RCLCPP_INFO(logger_, "开始规划测试路径...");
             
             bool success = static_cast<bool>(move_group_->plan(plan));
-            if (success) {
+            if (success) 
+            {
                 RCLCPP_INFO(logger_, "✓ 测试路径规划成功");
                 RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
                 
                 // 执行运动
                 RCLCPP_INFO(logger_, "开始执行测试路径...");
                 auto result = move_group_->execute(plan);
-                if (result == moveit::core::MoveItErrorCode::SUCCESS) {
+                if (result == moveit::core::MoveItErrorCode::SUCCESS) 
+                {
                     RCLCPP_INFO(logger_, "✓ 测试路径执行成功");
                     results.push_back(CR7BaseController::Result::SUCCESS);
-                } else {
+                } 
+                else 
+                {
                     RCLCPP_ERROR(logger_, "测试路径执行失败");
                     results.push_back(CR7BaseController::Result::EXECUTION_FAILED);
                 }
-            } else {
+            } 
+            else 
+            {
                 RCLCPP_ERROR(logger_, "测试路径规划失败");
                 results.push_back(CR7BaseController::Result::PLANNING_FAILED);
             }
         }
-    } catch (const std::exception& e) {
+    } 
+    catch (const std::exception& e) 
+    {
         RCLCPP_ERROR(logger_, "执行测试路径异常: %s", e.what());
         results.push_back(CR7BaseController::Result::EXECUTION_FAILED);
     }
@@ -119,7 +130,8 @@ CR7BaseController::Result CR7PathExecutor::executeCartesianTestPath()
     RCLCPP_INFO(logger_, "开始执行笛卡尔测试路径");
     RCLCPP_INFO(logger_, "=======================================");
     
-    try {
+    try 
+    {
         // 获取当前位置
         auto current_pose = move_group_->getCurrentPose();
         
@@ -156,7 +168,9 @@ CR7BaseController::Result CR7PathExecutor::executeCartesianTestPath()
             RCLCPP_ERROR(logger_, "笛卡尔路径规划器未初始化");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
-    } catch (const std::exception& e) {
+    } 
+    catch (const std::exception& e) 
+    {
         RCLCPP_ERROR(logger_, "执行笛卡尔测试路径异常: %s", e.what());
         return CR7BaseController::Result::EXECUTION_FAILED;
     }
@@ -172,7 +186,8 @@ CR7BaseController::Result CR7PathExecutor::executePilzTestPath()
     RCLCPP_INFO(logger_, "开始执行PILZ测试路径");
     RCLCPP_INFO(logger_, "=======================================");
     
-    try {
+    try 
+    {
         // 获取当前位置
         auto current_pose = move_group_->getCurrentPose();
         
@@ -304,11 +319,12 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         RCLCPP_INFO(logger_, "终点位置: [%.3f, %.3f, %.3f]", 
                    end_wp.x, end_wp.y, end_wp.z);
         
-        // 使用笛卡尔路径规划器执行路径
-        if (cartesian_planner_) 
+        // 使用OMPL规划器执行路径
+        if (ompl_planner_) 
         {
-            // 使用优化的笛卡尔路径规划
-            return cartesian_planner_->executeCartesianPath(welding_waypoints);
+            // 使用OMPL规划器执行路径
+            RCLCPP_INFO(logger_, "使用OMPL规划器执行焊接路径测试");
+            return ompl_planner_->executeWaypoints(welding_waypoints);
         } 
         else if (pilz_planner_) 
         {

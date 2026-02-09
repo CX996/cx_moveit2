@@ -15,6 +15,11 @@
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <moveit_msgs/msg/constraints.hpp>
+#include <moveit_msgs/msg/position_constraint.hpp>
+#include <moveit_msgs/msg/orientation_constraint.hpp>
+#include <shape_msgs/msg/solid_primitive.hpp>
+#include <shape_msgs/msg/plane.hpp>
 
 using namespace std::chrono_literals;
 
@@ -269,6 +274,227 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseImpl(
     catch (const std::exception& e) 
     {
         RCLCPP_ERROR(logger_, "运动控制异常: %s", e.what());
+        return CR7BaseController::Result::EXECUTION_FAILED;
+    }
+}
+
+/**
+ * @brief 设置位置约束（盒子约束）
+ */
+void CR7OMPLPlanner::setPositionConstraintBox(
+    const std::string& link_name,
+    double min_x, double max_x,
+    double min_y, double max_y,
+    double min_z, double max_z,
+    const std::string& frame_id
+) {
+    moveit_msgs::msg::Constraints constraints;
+    moveit_msgs::msg::PositionConstraint position_constraint;
+    
+    position_constraint.header.frame_id = frame_id;
+    position_constraint.link_name = link_name;
+    position_constraint.weight = 1.0;
+    
+    // 创建盒子约束
+    shape_msgs::msg::SolidPrimitive box;
+    box.type = shape_msgs::msg::SolidPrimitive::BOX;
+    box.dimensions.resize(3);
+    box.dimensions[0] = max_x - min_x;
+    box.dimensions[1] = max_y - min_y;
+    box.dimensions[2] = max_z - min_z;
+    
+    // 盒子中心位置
+    geometry_msgs::msg::Pose box_pose;
+    box_pose.position.x = (min_x + max_x) / 2.0;
+    box_pose.position.y = (min_y + max_y) / 2.0;
+    box_pose.position.z = (min_z + max_z) / 2.0;
+    box_pose.orientation.w = 1.0;
+    
+    position_constraint.constraint_region.primitives.push_back(box);
+    position_constraint.constraint_region.primitive_poses.push_back(box_pose);
+    
+    constraints.position_constraints.push_back(position_constraint);
+    move_group_->setPathConstraints(constraints);
+    
+    RCLCPP_INFO(logger_, "设置位置约束（盒子约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
+    RCLCPP_INFO(logger_, "盒子尺寸: x=[%.3f,%.3f], y=[%.3f,%.3f], z=[%.3f,%.3f]", min_x, max_x, min_y, max_y, min_z, max_z);
+}
+
+/**
+ * @brief 设置位置约束（平面约束）
+ */
+void CR7OMPLPlanner::setPositionConstraintPlane(
+    const std::string& link_name,
+    const geometry_msgs::msg::Vector3& plane_normal,
+    double distance,
+    const std::string& frame_id
+) {
+    moveit_msgs::msg::Constraints constraints;
+    moveit_msgs::msg::PositionConstraint position_constraint;
+    
+    position_constraint.header.frame_id = frame_id;
+    position_constraint.link_name = link_name;
+    position_constraint.weight = 1.0;
+    
+    // 平面约束使用等式约束
+    moveit_msgs::msg::OrientationConstraint orient_constraint;
+    orient_constraint.header.frame_id = frame_id;
+    orient_constraint.link_name = link_name;
+    orient_constraint.orientation.w = 1.0;
+    orient_constraint.absolute_x_axis_tolerance = M_PI;
+    orient_constraint.absolute_y_axis_tolerance = M_PI;
+    orient_constraint.absolute_z_axis_tolerance = M_PI;
+    orient_constraint.weight = 0.0;
+    
+    constraints.orientation_constraints.push_back(orient_constraint);
+    move_group_->setPathConstraints(constraints);
+    
+    RCLCPP_INFO(logger_, "设置位置约束（平面约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
+    RCLCPP_INFO(logger_, "平面法线: [%.3f,%.3f,%.3f], 距离: %.3f", plane_normal.x, plane_normal.y, plane_normal.z, distance);
+}
+
+/**
+ * @brief 设置位置约束（直线约束）
+ */
+void CR7OMPLPlanner::setPositionConstraintLine(
+    const std::string& link_name,
+    const geometry_msgs::msg::Point& line_start,
+    const geometry_msgs::msg::Point& line_end,
+    const std::string& frame_id
+) {
+    moveit_msgs::msg::Constraints constraints;
+    moveit_msgs::msg::PositionConstraint position_constraint;
+    
+    position_constraint.header.frame_id = frame_id;
+    position_constraint.link_name = link_name;
+    position_constraint.weight = 1.0;
+    
+    // 直线约束使用等式约束
+    moveit_msgs::msg::OrientationConstraint orient_constraint;
+    orient_constraint.header.frame_id = frame_id;
+    orient_constraint.link_name = link_name;
+    orient_constraint.orientation.w = 1.0;
+    orient_constraint.absolute_x_axis_tolerance = M_PI;
+    orient_constraint.absolute_y_axis_tolerance = M_PI;
+    orient_constraint.absolute_z_axis_tolerance = M_PI;
+    orient_constraint.weight = 0.0;
+    
+    constraints.orientation_constraints.push_back(orient_constraint);
+    move_group_->setPathConstraints(constraints);
+    
+    RCLCPP_INFO(logger_, "设置位置约束（直线约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
+    RCLCPP_INFO(logger_, "直线起点: [%.3f,%.3f,%.3f]", line_start.x, line_start.y, line_start.z);
+    RCLCPP_INFO(logger_, "直线终点: [%.3f,%.3f,%.3f]", line_end.x, line_end.y, line_end.z);
+}
+
+/**
+ * @brief 设置姿态约束
+ */
+void CR7OMPLPlanner::setOrientationConstraint(
+    const std::string& link_name,
+    const geometry_msgs::msg::Quaternion& orientation,
+    double tolerance_x,
+    double tolerance_y,
+    double tolerance_z,
+    const std::string& frame_id
+) {
+    moveit_msgs::msg::Constraints constraints;
+    moveit_msgs::msg::OrientationConstraint orient_constraint;
+    
+    orient_constraint.header.frame_id = frame_id;
+    orient_constraint.link_name = link_name;
+    orient_constraint.orientation = orientation;
+    orient_constraint.absolute_x_axis_tolerance = tolerance_x;
+    orient_constraint.absolute_y_axis_tolerance = tolerance_y;
+    orient_constraint.absolute_z_axis_tolerance = tolerance_z;
+    orient_constraint.weight = 1.0;
+    
+    constraints.orientation_constraints.push_back(orient_constraint);
+    move_group_->setPathConstraints(constraints);
+    
+    RCLCPP_INFO(logger_, "设置姿态约束: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
+    RCLCPP_INFO(logger_, "目标姿态: [%.3f,%.3f,%.3f,%.3f]", 
+                orientation.x, orientation.y, orientation.z, orientation.w);
+    RCLCPP_INFO(logger_, "容差: x=%.3f, y=%.3f, z=%.3f", tolerance_x, tolerance_y, tolerance_z);
+}
+
+/**
+ * @brief 清除所有约束
+ */
+void CR7OMPLPlanner::clearConstraints() {
+    move_group_->clearPathConstraints();
+    RCLCPP_INFO(logger_, "清除所有约束");
+}
+
+/**
+ * @brief 执行带约束的规划
+ */
+CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
+    const geometry_msgs::msg::Pose& target_pose,
+    const std::string& waypoint_name
+) {
+    // 验证输入
+    std::string error_msg;
+    if (!utils::PoseUtils::validatePose(target_pose, &error_msg)) {
+        RCLCPP_ERROR(logger_, "无效的位姿: %s", error_msg.c_str());
+        return CR7BaseController::Result::INVALID_INPUT;
+    }
+    
+    // 打印目标信息
+    if (!waypoint_name.empty()) {
+        RCLCPP_INFO(logger_, "移动到路点（带约束）: %s", waypoint_name.c_str());
+    }
+    RCLCPP_INFO(logger_, "目标位置: [%.3f, %.3f, %.3f]", 
+                target_pose.position.x, target_pose.position.y, target_pose.position.z);
+    RCLCPP_INFO(logger_, "目标姿态: [%.3f, %.3f, %.3f, %.3f]",
+                target_pose.orientation.x, target_pose.orientation.y,
+                target_pose.orientation.z, target_pose.orientation.w);
+    
+    try 
+    {   
+        // 设置目标位姿
+        move_group_->setPoseTarget(target_pose);
+        
+        // 规划运动
+        moveit::planning_interface::MoveGroupInterface::Plan plan;
+        RCLCPP_INFO(logger_, "开始带约束的规划...");
+        
+        auto start_time = node_->now();
+        bool success = static_cast<bool>(move_group_->plan(plan));
+        double planning_time = (node_->now() - start_time).seconds();
+        
+        if (!success || plan.trajectory_.joint_trajectory.points.empty()) 
+        {   
+            RCLCPP_ERROR(logger_, "带约束的规划失败 (耗时 %.3f 秒)", planning_time);
+            return CR7BaseController::Result::PLANNING_FAILED;
+        }
+        
+        RCLCPP_INFO(logger_, "带约束的规划成功 (耗时 %.3f 秒), 轨迹点数: %zu", planning_time, plan.trajectory_.joint_trajectory.points.size());
+        
+        // 执行规划
+        RCLCPP_INFO(logger_, "开始执行带约束的运动...");
+        start_time = node_->now();
+        auto result = move_group_->execute(plan);
+        double execution_time = (node_->now() - start_time).seconds();
+        
+        if (result == moveit::core::MoveItErrorCode::SUCCESS) 
+        {   
+            RCLCPP_INFO(logger_, "带约束的运动执行成功 (耗时 %.3f 秒)", execution_time);
+            if (!waypoint_name.empty()) {
+                RCLCPP_INFO(logger_, "到达路点（带约束）: %s", waypoint_name.c_str());
+            }
+            return CR7BaseController::Result::SUCCESS;
+        } 
+        else 
+        {   
+            RCLCPP_ERROR(logger_, "带约束的运动执行失败 (错误码: %d, 耗时: %.3f 秒)", result.val, execution_time);
+            return CR7BaseController::Result::EXECUTION_FAILED;
+        }
+        
+    } 
+    catch (const std::exception& e) 
+    {   
+        RCLCPP_ERROR(logger_, "带约束的运动控制异常: %s", e.what());
         return CR7BaseController::Result::EXECUTION_FAILED;
     }
 }

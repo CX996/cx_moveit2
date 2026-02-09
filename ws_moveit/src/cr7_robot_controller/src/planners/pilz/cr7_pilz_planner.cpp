@@ -6,6 +6,7 @@
  */
 
 #include "cr7_robot_controller/planners/pilz/cr7_pilz_planner.hpp"
+#include "cr7_robot_controller/utils/trajectory_analyzer.hpp"
 #include <cmath>
 #include <chrono>
 #include <sstream>
@@ -388,7 +389,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
         move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
         
-        move_group_->clearPathConstraints();
+        move_group_->clearPathConstraints(); // 清除约束条件
 
         // 3. 设置PILZ特定的约束
         if (planner_id == "LIN") 
@@ -463,8 +464,13 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
                     bool is_linear = true;
                     const auto& points = plan.trajectory_.joint_trajectory.points;
                     if (points.size() > 2) {
-                        // 简单检查：末端应该接近直线运动
-                        // 您可以添加更复杂的检查逻辑
+                        // 获取当前位姿作为起点
+                        auto start_pose = getCurrentPose();
+                        
+                        // 使用工具类中的isTrajectoryLinear方法检查轨迹是否是直线
+                        is_linear = cr7_controller::utils::TrajectoryAnalyzer::isTrajectoryLinear(
+                            plan.trajectory_, start_pose, target_pose, config.max_deviation, move_group_, logger_
+                        );
                     }
                     
                     if (!is_linear) 
@@ -576,47 +582,6 @@ PilzPlanner CR7PilzPlanner::stringToPilzPlanner(const std::string& planner_name)
     {
         return PilzPlanner::LIN; // 默认返回LIN
     }
-}
-
-/**
- * @brief 保存轨迹分析
- */
-void CR7PilzPlanner::saveTrajectoryAnalysis(
-    const moveit_msgs::msg::RobotTrajectory& trajectory,
-    const std::string& filename_prefix)
-{
-    
-    if (trajectory.joint_trajectory.points.empty())
-    {
-        return;
-    }
-    
-    std::string filename = filename_prefix + ".txt";
-    std::ofstream file(filename);
-    
-    if (!file.is_open()) 
-    {
-        RCLCPP_WARN(logger_, "无法创建轨迹分析文件: %s", filename.c_str());
-        return;
-    }
-    
-    file << "PILZ轨迹分析报告" << std::endl;
-    file << "=================" << std::endl;
-    file << "轨迹点数: " << trajectory.joint_trajectory.points.size() << std::endl;
-    
-    const auto& points = trajectory.joint_trajectory.points;
-    double total_time = points.back().time_from_start.sec + 
-                       points.back().time_from_start.nanosec * 1e-9;
-    file << "轨迹总时间: " << std::fixed << std::setprecision(3) << total_time << " 秒" << std::endl;
-    
-    // 打印PILZ轨迹特点
-    file << "PILZ轨迹特点:" << std::endl;
-    file << "  - 平滑的加速度曲线" << std::endl;
-    file << "  - 工业级运动规划" << std::endl;
-    file << "  - 实时性能优化" << std::endl;
-    
-    file.close();
-    RCLCPP_INFO(logger_, "PILZ轨迹分析已保存到: %s", filename.c_str());
 }
 
 }  // namespace cr7_controller

@@ -224,4 +224,93 @@ CR7RobotController::Result CR7RobotController::executeWeldingTestPath()
     return path_executor_->executeWeldingTestPath();
 }
 
+// ============================================================================
+// OMPL约束规划方法实现
+// ============================================================================
+
+void CR7RobotController::setPositionConstraintBox(
+    const std::string& link_name,
+    double min_x, double max_x,
+    double min_y, double max_y,
+    double min_z, double max_z,
+    const std::string& frame_id
+) {
+    if (!ompl_planner_) {
+        RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
+        return;
+    }
+    
+    ompl_planner_->setPositionConstraintBox(link_name, min_x, max_x, min_y, max_y, min_z, max_z, frame_id);
+}
+
+void CR7RobotController::setPositionConstraintPlane(
+    const std::string& link_name,
+    const geometry_msgs::msg::Vector3& plane_normal,
+    double distance,
+    const std::string& frame_id
+) {
+    if (!ompl_planner_) {
+        RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
+        return;
+    }
+    
+    ompl_planner_->setPositionConstraintPlane(link_name, plane_normal, distance, frame_id);
+}
+
+void CR7RobotController::setPositionConstraintLine(
+    const std::string& link_name,
+    const geometry_msgs::msg::Point& line_start,
+    const geometry_msgs::msg::Point& line_end,
+    const std::string& frame_id
+) {
+    if (!ompl_planner_) {
+        RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
+        return;
+    }
+    
+    ompl_planner_->setPositionConstraintLine(link_name, line_start, line_end, frame_id);
+}
+
+void CR7RobotController::setOrientationConstraint(
+    const std::string& link_name,
+    const geometry_msgs::msg::Quaternion& orientation,
+    double tolerance_x,
+    double tolerance_y,
+    double tolerance_z,
+    const std::string& frame_id
+) {
+    if (!ompl_planner_) {
+        RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
+        return;
+    }
+    
+    ompl_planner_->setOrientationConstraint(link_name, orientation, tolerance_x, tolerance_y, tolerance_z, frame_id);
+}
+
+void CR7RobotController::clearConstraints() {
+    if (!ompl_planner_) {
+        RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
+        return;
+    }
+    
+    ompl_planner_->clearConstraints();
+}
+
+CR7RobotController::Result CR7RobotController::moveToPoseWithConstraints(
+    const geometry_msgs::msg::Pose& target_pose,
+    const std::string& waypoint_name
+) {
+    if (!initialized_) {
+        RCLCPP_ERROR(logger_, "控制器未初始化");
+        return Result::ROBOT_NOT_READY;
+    }
+    
+    if (!ompl_planner_) {
+        RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
+        return Result::ROBOT_NOT_READY;
+    }
+    
+    return ompl_planner_->moveToPoseWithConstraints(target_pose, waypoint_name);
+}
+
 } // namespace cr7_controller

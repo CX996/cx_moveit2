@@ -171,6 +171,91 @@ public:
         return ompl_planner_;
     }
     
+    // ============================================================================
+    // OMPL约束规划方法
+    // ============================================================================
+    
+    /**
+     * @brief 设置位置约束（盒子约束）
+     * @param link_name 要约束的连杆名称
+     * @param min_x 最小x坐标
+     * @param max_x 最大x坐标
+     * @param min_y 最小y坐标
+     * @param max_y 最大y坐标
+     * @param min_z 最小z坐标
+     * @param max_z 最大z坐标
+     * @param frame_id 参考坐标系
+     */
+    void setPositionConstraintBox(
+        const std::string& link_name,
+        double min_x, double max_x,
+        double min_y, double max_y,
+        double min_z, double max_z,
+        const std::string& frame_id = "base_link"
+    );
+    
+    /**
+     * @brief 设置位置约束（平面约束）
+     * @param link_name 要约束的连杆名称
+     * @param plane_normal 平面法线
+     * @param distance 平面距离原点的距离
+     * @param frame_id 参考坐标系
+     */
+    void setPositionConstraintPlane(
+        const std::string& link_name,
+        const geometry_msgs::msg::Vector3& plane_normal,
+        double distance,
+        const std::string& frame_id = "base_link"
+    );
+    
+    /**
+     * @brief 设置位置约束（直线约束）
+     * @param link_name 要约束的连杆名称
+     * @param line_start 直线起点
+     * @param line_end 直线终点
+     * @param frame_id 参考坐标系
+     */
+    void setPositionConstraintLine(
+        const std::string& link_name,
+        const geometry_msgs::msg::Point& line_start,
+        const geometry_msgs::msg::Point& line_end,
+        const std::string& frame_id = "base_link"
+    );
+    
+    /**
+     * @brief 设置姿态约束
+     * @param link_name 要约束的连杆名称
+     * @param orientation 目标姿态
+     * @param tolerance_x x轴方向容差
+     * @param tolerance_y y轴方向容差
+     * @param tolerance_z z轴方向容差
+     * @param frame_id 参考坐标系
+     */
+    void setOrientationConstraint(
+        const std::string& link_name,
+        const geometry_msgs::msg::Quaternion& orientation,
+        double tolerance_x = 0.01,
+        double tolerance_y = 0.01,
+        double tolerance_z = 0.01,
+        const std::string& frame_id = "base_link"
+    );
+    
+    /**
+     * @brief 清除所有约束
+     */
+    void clearConstraints();
+    
+    /**
+     * @brief 执行带约束的规划
+     * @param target_pose 目标位姿
+     * @param waypoint_name 路点名称（用于日志）
+     * @return Result 规划结果
+     */
+    Result moveToPoseWithConstraints(
+        const geometry_msgs::msg::Pose& target_pose,
+        const std::string& waypoint_name = ""
+    );
+    
 private:
     // ============================================================================
     // 模块成员变量

@@ -59,6 +59,35 @@ public:
     static void printTrajectoryInfo(
         const moveit_msgs::msg::RobotTrajectory& trajectory,
         rclcpp::Logger logger);
+    
+    /**
+     * @brief 保存详细轨迹分析
+     * @param trajectory 机器人轨迹
+     * @param filename_prefix 文件名前缀
+     * @param logger ROS logger
+     */
+    static void saveDetailedTrajectoryAnalysis(
+        const moveit_msgs::msg::RobotTrajectory& trajectory,
+        const std::string& filename_prefix,
+        rclcpp::Logger logger);
+    
+    /**
+     * @brief 检查轨迹是否是直线
+     * @param trajectory 轨迹
+     * @param start_pose 起始位姿
+     * @param end_pose 结束位姿
+     * @param max_deviation 最大允许偏差
+     * @param move_group MoveGroup接口指针
+     * @param logger ROS logger
+     * @return bool 是否是直线
+     */
+    static bool isTrajectoryLinear(
+        const moveit_msgs::msg::RobotTrajectory& trajectory,
+        const geometry_msgs::msg::Pose& start_pose,
+        const geometry_msgs::msg::Pose& end_pose,
+        double max_deviation,
+        std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
+        rclcpp::Logger logger);
 };
 
 } // namespace utils

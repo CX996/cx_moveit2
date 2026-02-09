@@ -187,16 +187,6 @@ private:
     );
     
     /**
-     * @brief 保存轨迹分析
-     * @param trajectory 轨迹
-     * @param filename_prefix 文件名前缀
-     */
-    void saveTrajectoryAnalysis(
-        const moveit_msgs::msg::RobotTrajectory& trajectory,
-        const std::string& filename_prefix
-    );
-    
-    /**
      * @brief 获取当前位姿
      * @return geometry_msgs::msg::Pose 当前位姿
      */
