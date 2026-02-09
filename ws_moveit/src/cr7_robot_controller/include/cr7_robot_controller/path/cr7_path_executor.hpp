@@ -80,6 +80,12 @@ public:
      */
     CR7BaseController::Result executeWeldingTestPath();
     
+    /**
+     * @brief 执行OMPL约束规划测试
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result executeOMPLConstraintTest();
+    
 private:
     // 成员变量
     rclcpp::Node::SharedPtr node_;

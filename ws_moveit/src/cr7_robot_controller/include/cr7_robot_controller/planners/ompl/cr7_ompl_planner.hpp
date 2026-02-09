@@ -26,6 +26,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "cr7_robot_controller/base/cr7_base_controller.hpp"
+#include "cr7_robot_controller/utils/trajectory_analyzer.hpp"
 
 namespace cr7_controller {
 
@@ -219,6 +220,91 @@ public:
      */
     CR7BaseController::Result moveToPoseWithConstraints(
         const geometry_msgs::msg::Pose& target_pose,
+        const std::string& waypoint_name = ""
+    );
+    
+    /**
+     * @brief 执行带盒子约束的规划
+     * @param target_pose 目标位姿
+     * @param link_name 要约束的连杆名称
+     * @param min_x 最小x坐标
+     * @param max_x 最大x坐标
+     * @param min_y 最小y坐标
+     * @param max_y 最大y坐标
+     * @param min_z 最小z坐标
+     * @param max_z 最大z坐标
+     * @param frame_id 参考坐标系
+     * @param waypoint_name 路点名称（用于日志）
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result moveToPoseWithBoxConstraint(
+        const geometry_msgs::msg::Pose& target_pose,
+        const std::string& link_name,
+        double min_x, double max_x,
+        double min_y, double max_y,
+        double min_z, double max_z,
+        const std::string& frame_id = "base_link",
+        const std::string& waypoint_name = ""
+    );
+    
+    /**
+     * @brief 执行带平面约束的规划
+     * @param target_pose 目标位姿
+     * @param link_name 要约束的连杆名称
+     * @param plane_normal 平面法线
+     * @param distance 平面距离原点的距离
+     * @param frame_id 参考坐标系
+     * @param waypoint_name 路点名称（用于日志）
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result moveToPoseWithPlaneConstraint(
+        const geometry_msgs::msg::Pose& target_pose,
+        const std::string& link_name,
+        const geometry_msgs::msg::Vector3& plane_normal,
+        double distance,
+        const std::string& frame_id = "base_link",
+        const std::string& waypoint_name = ""
+    );
+    
+    /**
+     * @brief 执行带直线约束的规划
+     * @param target_pose 目标位姿
+     * @param link_name 要约束的连杆名称
+     * @param line_start 直线起点
+     * @param line_end 直线终点
+     * @param frame_id 参考坐标系
+     * @param waypoint_name 路点名称（用于日志）
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result moveToPoseWithLineConstraint(
+        const geometry_msgs::msg::Pose& target_pose,
+        const std::string& link_name,
+        const geometry_msgs::msg::Point& line_start,
+        const geometry_msgs::msg::Point& line_end,
+        const std::string& frame_id = "base_link",
+        const std::string& waypoint_name = ""
+    );
+    
+    /**
+     * @brief 执行带姿态约束的规划
+     * @param target_pose 目标位姿
+     * @param link_name 要约束的连杆名称
+     * @param orientation 目标姿态
+     * @param tolerance_x x轴方向容差
+     * @param tolerance_y y轴方向容差
+     * @param tolerance_z z轴方向容差
+     * @param frame_id 参考坐标系
+     * @param waypoint_name 路点名称（用于日志）
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result moveToPoseWithOrientationConstraint(
+        const geometry_msgs::msg::Pose& target_pose,
+        const std::string& link_name,
+        const geometry_msgs::msg::Quaternion& orientation,
+        double tolerance_x = 0.01,
+        double tolerance_y = 0.01,
+        double tolerance_z = 0.01,
+        const std::string& frame_id = "base_link",
         const std::string& waypoint_name = ""
     );
     

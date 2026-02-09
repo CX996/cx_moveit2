@@ -12,6 +12,7 @@
 
 #include "cr7_robot_controller/planners/ompl/cr7_ompl_planner.hpp"
 #include "cr7_robot_controller/utils/pose_utils.hpp"
+#include "cr7_robot_controller/utils/trajectory_analyzer.hpp"
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -471,6 +472,27 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
         
         RCLCPP_INFO(logger_, "带约束的规划成功 (耗时 %.3f 秒), 轨迹点数: %zu", planning_time, plan.trajectory_.joint_trajectory.points.size());
         
+        // 检查轨迹是否为直线（如果是直线约束）
+        if (waypoint_name.find("line_constraint") != std::string::npos) {
+            // 获取当前位姿作为起点
+            auto current_pose = move_group_->getCurrentPose().pose;
+            
+            // 检查轨迹是否为直线
+            bool is_linear = utils::TrajectoryAnalyzer::isTrajectoryLinear(
+                plan.trajectory_,
+                current_pose,
+                target_pose,
+                0.001, // 最大偏差1mm
+                move_group_
+            );
+            
+            if (is_linear) {
+                RCLCPP_INFO(logger_, "轨迹检查: 轨迹是直线");
+            } else {
+                RCLCPP_WARN(logger_, "轨迹检查: 轨迹不是直线");
+            }
+        }
+        
         // 执行规划
         RCLCPP_INFO(logger_, "开始执行带约束的运动...");
         start_time = node_->now();
@@ -493,10 +515,109 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
         
     } 
     catch (const std::exception& e) 
-    {   
+    {
         RCLCPP_ERROR(logger_, "带约束的运动控制异常: %s", e.what());
         return CR7BaseController::Result::EXECUTION_FAILED;
     }
+}
+
+/**
+ * @brief 执行带盒子约束的规划
+ */
+CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithBoxConstraint(
+    const geometry_msgs::msg::Pose& target_pose,
+    const std::string& link_name,
+    double min_x, double max_x,
+    double min_y, double max_y,
+    double min_z, double max_z,
+    const std::string& frame_id,
+    const std::string& waypoint_name
+) {
+    // 设置盒子约束
+    setPositionConstraintBox(link_name, min_x, max_x, min_y, max_y, min_z, max_z, frame_id);
+    
+    // 执行规划
+    auto result = moveToPoseWithConstraints(target_pose, waypoint_name);
+    
+    // 清除约束
+    clearConstraints();
+    
+    return result;
+}
+
+/**
+ * @brief 执行带平面约束的规划
+ */
+CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithPlaneConstraint(
+    const geometry_msgs::msg::Pose& target_pose,
+    const std::string& link_name,
+    const geometry_msgs::msg::Vector3& plane_normal,
+    double distance,
+    const std::string& frame_id,
+    const std::string& waypoint_name
+) {
+    // 设置平面约束
+    setPositionConstraintPlane(link_name, plane_normal, distance, frame_id);
+    
+    // 执行规划
+    auto result = moveToPoseWithConstraints(target_pose, waypoint_name);
+    
+    // 清除约束
+    clearConstraints();
+    
+    return result;
+}
+
+/**
+ * @brief 执行带直线约束的规划
+ */
+CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithLineConstraint(
+    const geometry_msgs::msg::Pose& target_pose,
+    const std::string& link_name,
+    const geometry_msgs::msg::Point& line_start,
+    const geometry_msgs::msg::Point& line_end,
+    const std::string& frame_id,
+    const std::string& waypoint_name
+) {
+    // 设置直线约束
+    setPositionConstraintLine(link_name, line_start, line_end, frame_id);
+    
+    // 执行规划
+    auto result = moveToPoseWithConstraints(target_pose, waypoint_name);
+    
+    // 清除约束
+    clearConstraints();
+    
+    // 这里可以添加轨迹直线检查
+    // 注意：由于我们已经执行了规划，这里无法直接获取轨迹
+    // 实际应用中，可能需要修改moveToPoseWithConstraints函数，返回轨迹信息
+    
+    return result;
+}
+
+/**
+ * @brief 执行带姿态约束的规划
+ */
+CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithOrientationConstraint(
+    const geometry_msgs::msg::Pose& target_pose,
+    const std::string& link_name,
+    const geometry_msgs::msg::Quaternion& orientation,
+    double tolerance_x,
+    double tolerance_y,
+    double tolerance_z,
+    const std::string& frame_id,
+    const std::string& waypoint_name
+) {
+    // 设置姿态约束
+    setOrientationConstraint(link_name, orientation, tolerance_x, tolerance_y, tolerance_z, frame_id);
+    
+    // 执行规划
+    auto result = moveToPoseWithConstraints(target_pose, waypoint_name);
+    
+    // 清除约束
+    clearConstraints();
+    
+    return result;
 }
 
 }  // namespace cr7_controller

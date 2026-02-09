@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     auto node = std::make_shared<rclcpp::Node>("cr7_controller");
 
     // ==================== 参数声明 ====================
-    node->declare_parameter<std::string>("execute_mode", "pilz_test"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
+    node->declare_parameter<std::string>("execute_mode", "ompl_constraint_test"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
     node->declare_parameter<double>("init_timeout", 10.0);
 
     // 获取参数值
@@ -135,111 +135,9 @@ int main(int argc, char* argv[])
         {
             RCLCPP_INFO(node->get_logger(), "执行OMPL约束规划测试...");
             
-            // 获取当前位姿
-            auto current_pose = controller->getCurrentPose();
-            RCLCPP_INFO(node->get_logger(), "当前位置: [%.3f, %.3f, %.3f]", 
-                       current_pose.position.x, current_pose.position.y, current_pose.position.z);
-            
-            // 创建目标位姿
-            geometry_msgs::msg::Pose target_pose = current_pose;
-            target_pose.position.x += 0.1; // 向前移动10cm
-            target_pose.position.y += 0.1; // 向左移动10cm
-            
-            // 测试1: 盒子约束
-            RCLCPP_INFO(node->get_logger(), "\n=======================================\n");
-            RCLCPP_INFO(node->get_logger(), "测试1: 盒子约束");
-            RCLCPP_INFO(node->get_logger(), "=======================================\n");
-            
-            controller->setPositionConstraintBox(
-                "welding_tcp", // 假设末端连杆名称为welding_tcp
-                current_pose.position.x - 0.05, current_pose.position.x + 0.15,
-                current_pose.position.y - 0.05, current_pose.position.y + 0.15,
-                current_pose.position.z - 0.05, current_pose.position.z + 0.05
-            );
-            
-            auto result = controller->moveToPoseWithConstraints(target_pose, "box_constraint_test");
-            RCLCPP_INFO(node->get_logger(), "盒子约束测试结果: %s", 
+            auto result = controller->executeOMPLConstraintTest();
+            RCLCPP_INFO(node->get_logger(), "OMPL约束规划测试结果: %s", 
                        controller->resultToString(result).c_str());
-            
-            controller->clearConstraints();
-            
-            // 测试2: 平面约束
-            target_pose.position.x += 0.1; // 向前移动10cm
-            target_pose.position.y += 0.1; // 向左移动10cm
-
-            RCLCPP_INFO(node->get_logger(), "\n=======================================\n");
-            RCLCPP_INFO(node->get_logger(), "测试2: 平面约束");
-            RCLCPP_INFO(node->get_logger(), "=======================================\n");
-            
-            geometry_msgs::msg::Vector3 plane_normal;
-            plane_normal.x = 0.0;
-            plane_normal.y = 0.0;
-            plane_normal.z = 1.0; // 水平面
-            
-            controller->setPositionConstraintPlane(
-                "welding_tcp",
-                plane_normal,
-                current_pose.position.z // 当前高度
-            );
-            
-            result = controller->moveToPoseWithConstraints(target_pose, "plane_constraint_test");
-            RCLCPP_INFO(node->get_logger(), "平面约束测试结果: %s", 
-                       controller->resultToString(result).c_str());
-            
-            controller->clearConstraints();
-            
-            // 测试3: 直线约束
-            target_pose.position.x -= 0.1; // 向前移动10cm
-            target_pose.position.y -= 0.1; // 向左移动10cm
-
-            RCLCPP_INFO(node->get_logger(), "\n=======================================\n");
-            RCLCPP_INFO(node->get_logger(), "测试3: 直线约束");
-            RCLCPP_INFO(node->get_logger(), "=======================================\n");
-            
-            geometry_msgs::msg::Point line_start;
-            line_start.x = current_pose.position.x;
-            line_start.y = current_pose.position.y;
-            line_start.z = current_pose.position.z;
-            
-            geometry_msgs::msg::Point line_end;
-            line_end.x = target_pose.position.x;
-            line_end.y = target_pose.position.y;
-            line_end.z = target_pose.position.z;
-            
-            controller->setPositionConstraintLine(
-                "welding_tcp",
-                line_start,
-                line_end
-            );
-            
-            result = controller->moveToPoseWithConstraints(target_pose, "line_constraint_test");
-            RCLCPP_INFO(node->get_logger(), "直线约束测试结果: %s", 
-                       controller->resultToString(result).c_str());
-            
-            controller->clearConstraints();
-            
-            // 测试4: 姿态约束
-            target_pose.position.x -= 0.1; // 向前移动10cm
-            target_pose.position.y -= 0.1; // 向左移动10cm
-            RCLCPP_INFO(node->get_logger(), "\n=======================================\n");
-            RCLCPP_INFO(node->get_logger(), "测试4: 姿态约束");
-            RCLCPP_INFO(node->get_logger(), "=======================================\n");
-            
-            controller->setOrientationConstraint(
-                "welding_tcp",
-                current_pose.orientation,
-                0.01, 0.01, 0.01 // 小容差，保持姿态不变
-            );
-            
-            result = controller->moveToPoseWithConstraints(target_pose, "orientation_constraint_test");
-            RCLCPP_INFO(node->get_logger(), "姿态约束测试结果: %s", 
-                       controller->resultToString(result).c_str());
-            
-            controller->clearConstraints();
-            
-            RCLCPP_INFO(node->get_logger(), "\n=======================================\n");
-            RCLCPP_INFO(node->get_logger(), "OMPL约束规划测试完成");
-            RCLCPP_INFO(node->get_logger(), "=======================================\n");
         }
         else if (execute_mode == "idle")
         {

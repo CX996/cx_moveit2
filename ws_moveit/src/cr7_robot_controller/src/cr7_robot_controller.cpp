@@ -224,6 +224,21 @@ CR7RobotController::Result CR7RobotController::executeWeldingTestPath()
     return path_executor_->executeWeldingTestPath();
 }
 
+CR7RobotController::Result CR7RobotController::executeOMPLConstraintTest()
+{
+    if (!initialized_) {
+        RCLCPP_ERROR(logger_, "控制器未初始化");
+        return Result::ROBOT_NOT_READY;
+    }
+    
+    if (!path_executor_) {
+        RCLCPP_ERROR(logger_, "路径执行器未初始化");
+        return Result::ROBOT_NOT_READY;
+    }
+    
+    return path_executor_->executeOMPLConstraintTest();
+}
+
 // ============================================================================
 // OMPL约束规划方法实现
 // ============================================================================
