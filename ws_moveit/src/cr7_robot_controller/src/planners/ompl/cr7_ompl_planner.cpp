@@ -59,7 +59,17 @@ CR7OMPLPlanner::CR7OMPLPlanner(
     move_group_->setGoalPositionTolerance(config_.goal_position_tolerance);
     move_group_->setGoalOrientationTolerance(config_.goal_orientation_tolerance);
 
+    // 设置约束规划参数
+    // 注意：这些参数也需要在ompl_planning.yaml文件中设置
+    // enforce_constrained_state_space: true
+    // projection_evaluator: "joints(joint_1,joint_2)"
+    
     RCLCPP_INFO(logger_, "OMPL规划器初始化完成");
+    RCLCPP_INFO(logger_, "约束规划参数设置提示:");
+    RCLCPP_INFO(logger_, "请在ompl_planning.yaml文件中添加以下参数:");
+    RCLCPP_INFO(logger_, "cr7_group:");
+    RCLCPP_INFO(logger_, "  enforce_constrained_state_space: true");
+    RCLCPP_INFO(logger_, "  projection_evaluator: \"joints(joint_1,joint_2)\"");
 }
 
 /**
@@ -322,72 +332,133 @@ void CR7OMPLPlanner::setPositionConstraintBox(
 }
 
 /**
- * @brief 设置位置约束（平面约束）
- */
-void CR7OMPLPlanner::setPositionConstraintPlane(
-    const std::string& link_name,
-    const geometry_msgs::msg::Vector3& plane_normal,
-    double distance,
-    const std::string& frame_id
-) {
-    moveit_msgs::msg::Constraints constraints;
-    moveit_msgs::msg::PositionConstraint position_constraint;
-    
-    position_constraint.header.frame_id = frame_id;
-    position_constraint.link_name = link_name;
-    position_constraint.weight = 1.0;
-    
-    // 平面约束使用等式约束
-    moveit_msgs::msg::OrientationConstraint orient_constraint;
-    orient_constraint.header.frame_id = frame_id;
-    orient_constraint.link_name = link_name;
-    orient_constraint.orientation.w = 1.0;
-    orient_constraint.absolute_x_axis_tolerance = M_PI;
-    orient_constraint.absolute_y_axis_tolerance = M_PI;
-    orient_constraint.absolute_z_axis_tolerance = M_PI;
-    orient_constraint.weight = 0.0;
-    
-    constraints.orientation_constraints.push_back(orient_constraint);
-    move_group_->setPathConstraints(constraints);
-    
-    RCLCPP_INFO(logger_, "设置位置约束（平面约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
-    RCLCPP_INFO(logger_, "平面法线: [%.3f,%.3f,%.3f], 距离: %.3f", plane_normal.x, plane_normal.y, plane_normal.z, distance);
-}
+     * @brief 设置位置约束（平面约束）
+     */
+    void CR7OMPLPlanner::setPositionConstraintPlane(
+        const std::string& link_name,
+        const geometry_msgs::msg::Vector3& plane_normal,
+        double distance,
+        const std::string& frame_id
+    ) {
+        moveit_msgs::msg::Constraints constraints;
+        moveit_msgs::msg::PositionConstraint position_constraint;
+        
+        position_constraint.header.frame_id = frame_id;
+        position_constraint.link_name = link_name;
+        position_constraint.weight = 1.0;
+        
+        // 创建平面约束
+        shape_msgs::msg::Plane plane;
+        plane.coef[0] = plane_normal.x;
+        plane.coef[1] = plane_normal.y;
+        plane.coef[2] = plane_normal.z;
+        plane.coef[3] = -distance;
+        
+        position_constraint.constraint_region.primitives.push_back(shape_msgs::msg::SolidPrimitive());
+        position_constraint.constraint_region.primitive_poses.push_back(geometry_msgs::msg::Pose());
+        position_constraint.constraint_region.planes.push_back(plane);
+        
+        constraints.position_constraints.push_back(position_constraint);
+        move_group_->setPathConstraints(constraints);
+        
+        RCLCPP_INFO(logger_, "设置位置约束（平面约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
+        RCLCPP_INFO(logger_, "平面法线: [%.3f,%.3f,%.3f], 距离: %.3f", plane_normal.x, plane_normal.y, plane_normal.z, distance);
+    }
 
 /**
- * @brief 设置位置约束（直线约束）
- */
-void CR7OMPLPlanner::setPositionConstraintLine(
-    const std::string& link_name,
-    const geometry_msgs::msg::Point& line_start,
-    const geometry_msgs::msg::Point& line_end,
-    const std::string& frame_id
-) 
-{
-    moveit_msgs::msg::Constraints constraints;
-    moveit_msgs::msg::PositionConstraint position_constraint;
-    
-    position_constraint.header.frame_id = frame_id;
-    position_constraint.link_name = link_name;
-    position_constraint.weight = 1.0;
-    
-    // 直线约束使用等式约束
-    moveit_msgs::msg::OrientationConstraint orient_constraint;
-    orient_constraint.header.frame_id = frame_id;
-    orient_constraint.link_name = link_name;
-    orient_constraint.orientation.w = 1.0;
-    orient_constraint.absolute_x_axis_tolerance = M_PI;
-    orient_constraint.absolute_y_axis_tolerance = M_PI;
-    orient_constraint.absolute_z_axis_tolerance = M_PI;
-    orient_constraint.weight = 0.0;
-    
-    constraints.orientation_constraints.push_back(orient_constraint);
-    move_group_->setPathConstraints(constraints);
-    
-    RCLCPP_INFO(logger_, "设置位置约束（直线约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
-    RCLCPP_INFO(logger_, "直线起点: [%.3f,%.3f,%.3f]", line_start.x, line_start.y, line_start.z);
-    RCLCPP_INFO(logger_, "直线终点: [%.3f,%.3f,%.3f]", line_end.x, line_end.y, line_end.z);
-}
+     * @brief 设置位置约束（直线约束）
+     */
+    void CR7OMPLPlanner::setPositionConstraintLine(
+        const std::string& link_name,
+        const geometry_msgs::msg::Point& line_start,
+        const geometry_msgs::msg::Point& line_end,
+        const std::string& frame_id
+    ) 
+    {
+        moveit_msgs::msg::Constraints constraints;
+        moveit_msgs::msg::PositionConstraint position_constraint;
+        
+        position_constraint.header.frame_id = frame_id;
+        position_constraint.link_name = link_name;
+        position_constraint.weight = 1.0;
+        
+        // 计算直线方向向量
+        geometry_msgs::msg::Vector3 line_direction;
+        line_direction.x = line_end.x - line_start.x;
+        line_direction.y = line_end.y - line_start.y;
+        line_direction.z = line_end.z - line_start.z;
+        
+        // 计算直线长度
+        double line_length = std::sqrt(
+            line_direction.x * line_direction.x +
+            line_direction.y * line_direction.y +
+            line_direction.z * line_direction.z
+        );
+        
+        // 归一化方向向量
+        if (line_length > 0) {
+            line_direction.x /= line_length;
+            line_direction.y /= line_length;
+            line_direction.z /= line_length;
+        }
+        
+        // 创建一个圆柱体来表示直线约束
+        shape_msgs::msg::SolidPrimitive cylinder;
+        cylinder.type = shape_msgs::msg::SolidPrimitive::CYLINDER;
+        cylinder.dimensions.resize(2);
+        cylinder.dimensions[0] = line_length;  // 圆柱体长度
+        cylinder.dimensions[1] = 0.0005;       // 圆柱体半径（很小，近似直线）
+        
+        // 计算圆柱体的姿态
+        geometry_msgs::msg::Pose cylinder_pose;
+        cylinder_pose.position.x = (line_start.x + line_end.x) / 2.0;
+        cylinder_pose.position.y = (line_start.y + line_end.y) / 2.0;
+        cylinder_pose.position.z = (line_start.z + line_end.z) / 2.0;
+        
+        // 计算从z轴到直线方向的旋转
+        geometry_msgs::msg::Vector3 z_axis;
+        z_axis.x = 0.0;
+        z_axis.y = 0.0;
+        z_axis.z = 1.0;
+        
+        // 计算旋转轴
+        geometry_msgs::msg::Vector3 rotation_axis;
+        rotation_axis.x = z_axis.y * line_direction.z - z_axis.z * line_direction.y;
+        rotation_axis.y = z_axis.z * line_direction.x - z_axis.x * line_direction.z;
+        rotation_axis.z = z_axis.x * line_direction.y - z_axis.y * line_direction.x;
+        
+        // 计算旋转角度
+        double dot_product = z_axis.x * line_direction.x + z_axis.y * line_direction.y + z_axis.z * line_direction.z;
+        double angle = std::acos(dot_product);
+        
+        // 计算四元数
+        double sin_half_angle = std::sin(angle / 2.0);
+        double rotation_axis_length = std::sqrt(
+            rotation_axis.x * rotation_axis.x +
+            rotation_axis.y * rotation_axis.y +
+            rotation_axis.z * rotation_axis.z
+        );
+        
+        if (rotation_axis_length > 0) {
+            cylinder_pose.orientation.x = rotation_axis.x / rotation_axis_length * sin_half_angle;
+            cylinder_pose.orientation.y = rotation_axis.y / rotation_axis_length * sin_half_angle;
+            cylinder_pose.orientation.z = rotation_axis.z / rotation_axis_length * sin_half_angle;
+            cylinder_pose.orientation.w = std::cos(angle / 2.0);
+        } else {
+            cylinder_pose.orientation.w = 1.0;
+        }
+        
+        // 添加圆柱体到约束区域
+        position_constraint.constraint_region.primitives.push_back(cylinder);
+        position_constraint.constraint_region.primitive_poses.push_back(cylinder_pose);
+        
+        constraints.position_constraints.push_back(position_constraint);
+        move_group_->setPathConstraints(constraints);
+        
+        RCLCPP_INFO(logger_, "设置位置约束（直线约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
+        RCLCPP_INFO(logger_, "直线起点: [%.3f,%.3f,%.3f]", line_start.x, line_start.y, line_start.z);
+        RCLCPP_INFO(logger_, "直线终点: [%.3f,%.3f,%.3f]", line_end.x, line_end.y, line_end.z);
+    }
 
 /**
  * @brief 设置姿态约束
