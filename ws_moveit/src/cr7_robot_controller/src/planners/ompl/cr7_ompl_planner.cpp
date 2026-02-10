@@ -347,16 +347,62 @@ void CR7OMPLPlanner::setPositionConstraintBox(
         position_constraint.link_name = link_name;
         position_constraint.weight = 1.0;
         
-        // 创建平面约束
-        shape_msgs::msg::Plane plane;
-        plane.coef[0] = plane_normal.x;
-        plane.coef[1] = plane_normal.y;
-        plane.coef[2] = plane_normal.z;
-        plane.coef[3] = -distance;
+        // 创建一个平面约束
+        // 注意：根据官网教程，我们需要使用一个长方体来模拟平面
+        // 长方体的厚度很小，以模拟平面
+        shape_msgs::msg::SolidPrimitive box;
+        box.type = shape_msgs::msg::SolidPrimitive::BOX;
+        box.dimensions.resize(3);
+        box.dimensions[0] = 1.0; // 长度
+        box.dimensions[1] = 1.0; // 宽度
+        box.dimensions[2] = 0.0005; // 厚度（很小，模拟平面）
         
-        position_constraint.constraint_region.primitives.push_back(shape_msgs::msg::SolidPrimitive());
-        position_constraint.constraint_region.primitive_poses.push_back(geometry_msgs::msg::Pose());
-        position_constraint.constraint_region.planes.push_back(plane);
+        // 计算平面的位置
+        geometry_msgs::msg::Pose box_pose;
+        // 平面位置在距离原点distance处
+        // 方向与平面法线一致
+        
+        // 计算从z轴到平面法线的旋转
+        geometry_msgs::msg::Vector3 z_axis;
+        z_axis.x = 0.0;
+        z_axis.y = 0.0;
+        z_axis.z = 1.0;
+        
+        // 计算旋转轴
+        geometry_msgs::msg::Vector3 rotation_axis;
+        rotation_axis.x = z_axis.y * plane_normal.z - z_axis.z * plane_normal.y;
+        rotation_axis.y = z_axis.z * plane_normal.x - z_axis.x * plane_normal.z;
+        rotation_axis.z = z_axis.x * plane_normal.y - z_axis.y * plane_normal.x;
+        
+        // 计算旋转角度
+        double dot_product = z_axis.x * plane_normal.x + z_axis.y * plane_normal.y + z_axis.z * plane_normal.z;
+        double angle = std::acos(dot_product);
+        
+        // 计算四元数
+        double sin_half_angle = std::sin(angle / 2.0);
+        double rotation_axis_length = std::sqrt(
+            rotation_axis.x * rotation_axis.x +
+            rotation_axis.y * rotation_axis.y +
+            rotation_axis.z * rotation_axis.z
+        );
+        
+        if (rotation_axis_length > 0) {
+            box_pose.orientation.x = rotation_axis.x / rotation_axis_length * sin_half_angle;
+            box_pose.orientation.y = rotation_axis.y / rotation_axis_length * sin_half_angle;
+            box_pose.orientation.z = rotation_axis.z / rotation_axis_length * sin_half_angle;
+            box_pose.orientation.w = std::cos(angle / 2.0);
+        } else {
+            box_pose.orientation.w = 1.0;
+        }
+        
+        // 设置平面位置
+        box_pose.position.x = plane_normal.x * distance;
+        box_pose.position.y = plane_normal.y * distance;
+        box_pose.position.z = plane_normal.z * distance;
+        
+        // 添加长方体到约束区域
+        position_constraint.constraint_region.primitives.push_back(box);
+        position_constraint.constraint_region.primitive_poses.push_back(box_pose);
         
         constraints.position_constraints.push_back(position_constraint);
         move_group_->setPathConstraints(constraints);
@@ -402,18 +448,20 @@ void CR7OMPLPlanner::setPositionConstraintBox(
             line_direction.z /= line_length;
         }
         
-        // 创建一个圆柱体来表示直线约束
-        shape_msgs::msg::SolidPrimitive cylinder;
-        cylinder.type = shape_msgs::msg::SolidPrimitive::CYLINDER;
-        cylinder.dimensions.resize(2);
-        cylinder.dimensions[0] = line_length;  // 圆柱体长度
-        cylinder.dimensions[1] = 0.0005;       // 圆柱体半径（很小，近似直线）
+        // 创建一个很细的长方体来表示直线约束
+        // 按照官网教程，使用长方体代替圆柱体
+        shape_msgs::msg::SolidPrimitive box;
+        box.type = shape_msgs::msg::SolidPrimitive::BOX;
+        box.dimensions.resize(3);
+        box.dimensions[0] = line_length; // 长方体长度
+        box.dimensions[1] = 0.0005;       // 长方体宽度（很小）
+        box.dimensions[2] = 0.0005;       // 长方体高度（很小）
         
-        // 计算圆柱体的姿态
-        geometry_msgs::msg::Pose cylinder_pose;
-        cylinder_pose.position.x = (line_start.x + line_end.x) / 2.0;
-        cylinder_pose.position.y = (line_start.y + line_end.y) / 2.0;
-        cylinder_pose.position.z = (line_start.z + line_end.z) / 2.0;
+        // 计算长方体的姿态
+        geometry_msgs::msg::Pose box_pose;
+        box_pose.position.x = (line_start.x + line_end.x) / 2.0;
+        box_pose.position.y = (line_start.y + line_end.y) / 2.0;
+        box_pose.position.z = (line_start.z + line_end.z) / 2.0;
         
         // 计算从z轴到直线方向的旋转
         geometry_msgs::msg::Vector3 z_axis;
@@ -440,17 +488,17 @@ void CR7OMPLPlanner::setPositionConstraintBox(
         );
         
         if (rotation_axis_length > 0) {
-            cylinder_pose.orientation.x = rotation_axis.x / rotation_axis_length * sin_half_angle;
-            cylinder_pose.orientation.y = rotation_axis.y / rotation_axis_length * sin_half_angle;
-            cylinder_pose.orientation.z = rotation_axis.z / rotation_axis_length * sin_half_angle;
-            cylinder_pose.orientation.w = std::cos(angle / 2.0);
+            box_pose.orientation.x = rotation_axis.x / rotation_axis_length * sin_half_angle;
+            box_pose.orientation.y = rotation_axis.y / rotation_axis_length * sin_half_angle;
+            box_pose.orientation.z = rotation_axis.z / rotation_axis_length * sin_half_angle;
+            box_pose.orientation.w = std::cos(angle / 2.0);
         } else {
-            cylinder_pose.orientation.w = 1.0;
+            box_pose.orientation.w = 1.0;
         }
         
-        // 添加圆柱体到约束区域
-        position_constraint.constraint_region.primitives.push_back(cylinder);
-        position_constraint.constraint_region.primitive_poses.push_back(cylinder_pose);
+        // 添加长方体到约束区域
+        position_constraint.constraint_region.primitives.push_back(box);
+        position_constraint.constraint_region.primitive_poses.push_back(box_pose);
         
         constraints.position_constraints.push_back(position_constraint);
         move_group_->setPathConstraints(constraints);
