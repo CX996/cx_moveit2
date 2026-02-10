@@ -382,8 +382,19 @@ CR7BaseController::Result CR7PathExecutor::executeOMPLConstraintTest()
                 "base_link",
                 "box_constraint_test"
             );
-            RCLCPP_INFO(logger_, "盒子约束测试结果: %d", result);
-        } else {
+
+            if (result == CR7BaseController::Result::SUCCESS)
+            {
+                RCLCPP_INFO(logger_, "✓ 盒子约束测试成功");
+            } 
+            else 
+            {
+                RCLCPP_ERROR(logger_, "✗ 盒子约束测试失败");
+            }
+
+        } 
+        else 
+        {
             RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
@@ -410,7 +421,15 @@ CR7BaseController::Result CR7PathExecutor::executeOMPLConstraintTest()
                 "base_link",
                 "plane_constraint_test"
             );
-            RCLCPP_INFO(logger_, "平面约束测试结果: %d", result);
+
+            if (result == CR7BaseController::Result::SUCCESS)
+            {
+                RCLCPP_INFO(logger_, "✓ 平面约束测试成功");
+            } 
+            else 
+            {
+                RCLCPP_ERROR(logger_, "✗ 平面约束测试失败");
+            }
         }
         
         // 测试3: 直线约束
@@ -440,7 +459,15 @@ CR7BaseController::Result CR7PathExecutor::executeOMPLConstraintTest()
                 "base_link",
                 "line_constraint_test"
             );
-            RCLCPP_INFO(logger_, "直线约束测试结果: %d", result);
+
+            if (result == CR7BaseController::Result::SUCCESS)
+            {
+                RCLCPP_INFO(logger_, "✓ 直线约束测试成功");
+            } 
+            else 
+            {
+                RCLCPP_ERROR(logger_, "✗ 直线约束测试失败");
+            }
         }
         
         // 测试4: 姿态约束
@@ -459,7 +486,15 @@ CR7BaseController::Result CR7PathExecutor::executeOMPLConstraintTest()
                 "base_link",
                 "orientation_constraint_test"
             );
-            RCLCPP_INFO(logger_, "姿态约束测试结果: %d", result);
+            
+            if (result == CR7BaseController::Result::SUCCESS)
+            {
+                RCLCPP_INFO(logger_, "✓ 姿态约束测试成功");
+            } 
+            else 
+            {
+                RCLCPP_ERROR(logger_, "✗ 姿态约束测试失败");
+            }
         }
         
         RCLCPP_INFO(logger_, "\n=======================================");

@@ -362,7 +362,8 @@ void CR7OMPLPlanner::setPositionConstraintLine(
     const geometry_msgs::msg::Point& line_start,
     const geometry_msgs::msg::Point& line_end,
     const std::string& frame_id
-) {
+) 
+{
     moveit_msgs::msg::Constraints constraints;
     moveit_msgs::msg::PositionConstraint position_constraint;
     
@@ -473,22 +474,22 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
         RCLCPP_INFO(logger_, "带约束的规划成功 (耗时 %.3f 秒), 轨迹点数: %zu", planning_time, plan.trajectory_.joint_trajectory.points.size());
         
         // 检查轨迹是否为直线（如果是直线约束）
-        if (waypoint_name.find("line_constraint") != std::string::npos) {
+        if (waypoint_name.find("line_constraint") != std::string::npos) 
+        {
             // 获取当前位姿作为起点
             auto current_pose = move_group_->getCurrentPose().pose;
             
             // 检查轨迹是否为直线
-            bool is_linear = utils::TrajectoryAnalyzer::isTrajectoryLinear(
-                plan.trajectory_,
-                current_pose,
-                target_pose,
-                0.001, // 最大偏差1mm
-                move_group_
+            bool is_linear = cr7_controller::utils::TrajectoryAnalyzer::isTrajectoryLinear(
+                            plan.trajectory_, current_pose, target_pose, 0.001, move_group_, logger_
             );
             
-            if (is_linear) {
+            if (is_linear) 
+            {
                 RCLCPP_INFO(logger_, "轨迹检查: 轨迹是直线");
-            } else {
+            } 
+            else 
+            {
                 RCLCPP_WARN(logger_, "轨迹检查: 轨迹不是直线");
             }
         }
