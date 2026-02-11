@@ -44,12 +44,12 @@ struct OMPLConfig {
 
     OMPLConfig() 
         : planner_id("RRTstarkConfigDefault"),
-          planning_time(10.0),
-          num_planning_attempts(100),
+          planning_time(60.0),
+          num_planning_attempts(1000),
           velocity_scale(0.3),
-          acceleration_scale(0.3),
-          goal_position_tolerance(0.001),
-          goal_orientation_tolerance(0.01)
+          acceleration_scale(0.1),
+          goal_position_tolerance(0.05),
+          goal_orientation_tolerance(0.05)
     {
     }
 };

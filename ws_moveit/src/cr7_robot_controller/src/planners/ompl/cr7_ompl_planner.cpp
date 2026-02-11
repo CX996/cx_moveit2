@@ -325,6 +325,7 @@ void CR7OMPLPlanner::setPositionConstraintBox(
     position_constraint.constraint_region.primitive_poses.push_back(box_pose);
     
     constraints.position_constraints.push_back(position_constraint);
+    constraints.name = "use_equality_constraints";
     move_group_->setPathConstraints(constraints);
     
     RCLCPP_INFO(logger_, "设置位置约束（盒子约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
@@ -405,108 +406,97 @@ void CR7OMPLPlanner::setPositionConstraintBox(
         position_constraint.constraint_region.primitive_poses.push_back(box_pose);
         
         constraints.position_constraints.push_back(position_constraint);
+        constraints.name = "use_equality_constraints";
         move_group_->setPathConstraints(constraints);
         
         RCLCPP_INFO(logger_, "设置位置约束（平面约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
         RCLCPP_INFO(logger_, "平面法线: [%.3f,%.3f,%.3f], 距离: %.3f", plane_normal.x, plane_normal.y, plane_normal.z, distance);
     }
-
 /**
-     * @brief 设置位置约束（直线约束）
-     */
-    void CR7OMPLPlanner::setPositionConstraintLine(
-        const std::string& link_name,
-        const geometry_msgs::msg::Point& line_start,
-        const geometry_msgs::msg::Point& line_end,
-        const std::string& frame_id
-    ) 
-    {
-        moveit_msgs::msg::Constraints constraints;
-        moveit_msgs::msg::PositionConstraint position_constraint;
-        
-        position_constraint.header.frame_id = frame_id;
-        position_constraint.link_name = link_name;
-        position_constraint.weight = 1.0;
-        
-        // 计算直线方向向量
-        geometry_msgs::msg::Vector3 line_direction;
-        line_direction.x = line_end.x - line_start.x;
-        line_direction.y = line_end.y - line_start.y;
-        line_direction.z = line_end.z - line_start.z;
-        
-        // 计算直线长度
-        double line_length = std::sqrt(
-            line_direction.x * line_direction.x +
-            line_direction.y * line_direction.y +
-            line_direction.z * line_direction.z
-        );
-        
-        // 归一化方向向量
-        if (line_length > 0) {
-            line_direction.x /= line_length;
-            line_direction.y /= line_length;
-            line_direction.z /= line_length;
-        }
-        
-        // 创建一个很细的长方体来表示直线约束
-        // 按照官网教程，使用长方体代替圆柱体
-        shape_msgs::msg::SolidPrimitive box;
-        box.type = shape_msgs::msg::SolidPrimitive::BOX;
-        box.dimensions.resize(3);
-        box.dimensions[0] = line_length; // 长方体长度
-        box.dimensions[1] = 0.0005;       // 长方体宽度（很小）
-        box.dimensions[2] = 0.0005;       // 长方体高度（很小）
-        
-        // 计算长方体的姿态
-        geometry_msgs::msg::Pose box_pose;
-        box_pose.position.x = (line_start.x + line_end.x) / 2.0;
-        box_pose.position.y = (line_start.y + line_end.y) / 2.0;
-        box_pose.position.z = (line_start.z + line_end.z) / 2.0;
-        
-        // 计算从z轴到直线方向的旋转
-        geometry_msgs::msg::Vector3 z_axis;
-        z_axis.x = 0.0;
-        z_axis.y = 0.0;
-        z_axis.z = 1.0;
-        
-        // 计算旋转轴
-        geometry_msgs::msg::Vector3 rotation_axis;
-        rotation_axis.x = z_axis.y * line_direction.z - z_axis.z * line_direction.y;
-        rotation_axis.y = z_axis.z * line_direction.x - z_axis.x * line_direction.z;
-        rotation_axis.z = z_axis.x * line_direction.y - z_axis.y * line_direction.x;
-        
-        // 计算旋转角度
-        double dot_product = z_axis.x * line_direction.x + z_axis.y * line_direction.y + z_axis.z * line_direction.z;
-        double angle = std::acos(dot_product);
-        
-        // 计算四元数
-        double sin_half_angle = std::sin(angle / 2.0);
-        double rotation_axis_length = std::sqrt(
-            rotation_axis.x * rotation_axis.x +
-            rotation_axis.y * rotation_axis.y +
-            rotation_axis.z * rotation_axis.z
-        );
-        
-        if (rotation_axis_length > 0) {
-            box_pose.orientation.x = rotation_axis.x / rotation_axis_length * sin_half_angle;
-            box_pose.orientation.y = rotation_axis.y / rotation_axis_length * sin_half_angle;
-            box_pose.orientation.z = rotation_axis.z / rotation_axis_length * sin_half_angle;
-            box_pose.orientation.w = std::cos(angle / 2.0);
-        } else {
-            box_pose.orientation.w = 1.0;
-        }
-        
-        // 添加长方体到约束区域
-        position_constraint.constraint_region.primitives.push_back(box);
-        position_constraint.constraint_region.primitive_poses.push_back(box_pose);
-        
-        constraints.position_constraints.push_back(position_constraint);
-        move_group_->setPathConstraints(constraints);
-        
-        RCLCPP_INFO(logger_, "设置位置约束（直线约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
-        RCLCPP_INFO(logger_, "直线起点: [%.3f,%.3f,%.3f]", line_start.x, line_start.y, line_start.z);
-        RCLCPP_INFO(logger_, "直线终点: [%.3f,%.3f,%.3f]", line_end.x, line_end.y, line_end.z);
+ * @brief 设置位置约束（直线约束）- 修正版
+ */
+void CR7OMPLPlanner::setPositionConstraintLine(
+    const std::string& link_name,
+    const geometry_msgs::msg::Point& line_start,
+    const geometry_msgs::msg::Point& line_end,
+    const std::string& frame_id
+) 
+{
+    moveit_msgs::msg::Constraints constraints;
+    moveit_msgs::msg::PositionConstraint position_constraint;
+    
+    position_constraint.header.frame_id = frame_id;
+    position_constraint.link_name = link_name;
+    position_constraint.weight = 1.0;
+    
+    // 计算直线方向和长度
+    double dx = line_end.x - line_start.x;
+    double dy = line_end.y - line_start.y;
+    double dz = line_end.z - line_start.z;
+    
+    double line_length = std::sqrt(dx*dx + dy*dy + dz*dz);
+    
+    if (line_length < 1e-6) {
+        RCLCPP_ERROR(logger_, "直线长度太短: %.6f", line_length);
+        return;
     }
+    
+    // 归一化方向向量
+    dx /= line_length;
+    dy /= line_length;
+    dz /= line_length;
+    
+    // 创建表示直线的长方体约束
+    // 关键修改：非主轴方向尺寸要小于0.001
+    shape_msgs::msg::SolidPrimitive box;
+    box.type = shape_msgs::msg::SolidPrimitive::BOX;
+    box.dimensions.resize(3);
+    box.dimensions[0] = line_length;  // 主轴方向：直线长度
+    box.dimensions[1] = 0.0005;       // 必须小于0.001（等式约束）
+    box.dimensions[2] = 0.0005;       // 必须小于0.001（等式约束）
+    
+    // 长方体中心点
+    geometry_msgs::msg::Pose box_pose;
+    box_pose.position.x = (line_start.x + line_end.x) / 2.0;
+    box_pose.position.y = (line_start.y + line_end.y) / 2.0;
+    box_pose.position.z = (line_start.z + line_end.z) / 2.0;
+    
+    // 简化姿态计算
+    // 将长方体主轴（X轴）对齐到直线方向
+    // 使用tf2的quaternionFromUnitVectors或手动计算
+    tf2::Vector3 start_vec(line_start.x, line_start.y, line_start.z);
+    tf2::Vector3 end_vec(line_end.x, line_end.y, line_end.z);
+    tf2::Vector3 line_vec = end_vec - start_vec;
+    line_vec.normalize();
+    
+    // 长方体默认X轴是主轴，我们要将其旋转到直线方向
+    tf2::Vector3 x_axis(1, 0, 0);  // 长方体默认主轴方向
+    tf2::Quaternion rotation = tf2::shortestArcQuat(x_axis, line_vec);
+    rotation.normalize();
+    
+    // 转换回geometry_msgs
+    box_pose.orientation.x = rotation.x();
+    box_pose.orientation.y = rotation.y();
+    box_pose.orientation.z = rotation.z();
+    box_pose.orientation.w = rotation.w();
+    
+    // 添加约束区域
+    position_constraint.constraint_region.primitives.push_back(box);
+    position_constraint.constraint_region.primitive_poses.push_back(box_pose);
+    constraints.position_constraints.push_back(position_constraint);
+    
+    // 关键：设置等式约束标志
+    constraints.name = "use_equality_constraints";
+    
+    // 设置路径约束
+    move_group_->setPathConstraints(constraints);
+    
+    RCLCPP_INFO(logger_, "设置直线约束: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
+    RCLCPP_INFO(logger_, "直线长度: %.3f, 方向: [%.3f,%.3f,%.3f]", 
+                line_length, dx, dy, dz);
+    RCLCPP_INFO(logger_, "约束尺寸: [%.6f,%.6f,%.6f]", 
+                box.dimensions[0], box.dimensions[1], box.dimensions[2]);
+}
 
 /**
  * @brief 设置姿态约束
@@ -699,6 +689,9 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithLineConstraint(
     const std::string& frame_id,
     const std::string& waypoint_name
 ) {
+    // 清除当前约束
+    move_group_->clearPathConstraints(); // 清除约束条件
+
     // 设置直线约束
     setPositionConstraintLine(link_name, line_start, line_end, frame_id);
     
