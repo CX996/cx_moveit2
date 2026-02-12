@@ -146,16 +146,6 @@ bool CR7BaseController::initialize(double timeout_sec)
         return false;
     }
     
-    // // 2. 设置默认规划参数
-    // move_group_->setPlanningTime(10.0);           // 规划时间20秒
-    // move_group_->setNumPlanningAttempts(100);      // 尝试50次
-    // move_group_->setMaxVelocityScalingFactor(0.3);  // 最大速度50%
-    // move_group_->setMaxAccelerationScalingFactor(0.3);  // 最大加速度30%
-    
-    // // 3. 设置目标容差
-    // move_group_->setGoalPositionTolerance(0.001);    // 1mm
-    // move_group_->setGoalOrientationTolerance(0.01);  // 约0.57度
-    
     RCLCPP_INFO(logger_, "机器人控制器初始化完成");
     RCLCPP_INFO(logger_, "规划时间: %.1f秒", move_group_->getPlanningTime());
     

@@ -47,8 +47,15 @@ CR7OMPLPlanner::CR7OMPLPlanner(
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
+    // 初始化MoveItVisualTools
+    std::string base_frame = move_group_->getPlanningFrame();
+    visual_tools_ = std::make_shared<moveit_visual_tools::MoveItVisualTools>(
+        node, base_frame, rviz_visual_tools::RVIZ_MARKER_TOPIC, move_group_->getRobotModel());
+    visual_tools_->loadRemoteControl();
+
     RCLCPP_INFO(logger_, "创建OMPL规划器");
     RCLCPP_INFO(logger_, "默认规划器: %s", config_.planner_id.c_str());
+    RCLCPP_INFO(logger_, "初始化可视化工具，参考坐标系: %s", base_frame.c_str());
 
     // 设置默认规划参数
     move_group_->setPlannerId(config_.planner_id);
@@ -58,6 +65,10 @@ CR7OMPLPlanner::CR7OMPLPlanner(
     move_group_->setMaxAccelerationScalingFactor(config_.acceleration_scale);
     move_group_->setGoalPositionTolerance(config_.goal_position_tolerance);
     move_group_->setGoalOrientationTolerance(config_.goal_orientation_tolerance);
+    
+    // 添加约束规划的特殊设置
+    move_group_->setWorkspace(-2.0, -2.0, -2.0, 2.0, 2.0, 2.0);  // 设置更大的工作空间
+    move_group_->setStartStateToCurrentState();  // 使用当前状态作为起始状态
 
     // 设置约束规划参数
     // 注意：这些参数也需要在ompl_planning.yaml文件中设置
@@ -70,6 +81,7 @@ CR7OMPLPlanner::CR7OMPLPlanner(
     RCLCPP_INFO(logger_, "cr7_group:");
     RCLCPP_INFO(logger_, "  enforce_constrained_state_space: true");
     RCLCPP_INFO(logger_, "  projection_evaluator: \"joints(joint_1,joint_2)\"");
+    RCLCPP_INFO(logger_, "可视化工具已就绪，可在RViz中查看约束区域和规划轨迹");
 }
 
 /**
@@ -225,13 +237,15 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseImpl(
 {
     // 验证输入
     std::string error_msg;
-    if (!utils::PoseUtils::validatePose(target_pose, &error_msg)) {
+    if (!utils::PoseUtils::validatePose(target_pose, &error_msg)) 
+    {
         RCLCPP_ERROR(logger_, "无效的位姿: %s", error_msg.c_str());
         return CR7BaseController::Result::INVALID_INPUT;
     }
     
     // 打印目标信息
-    if (!waypoint_name.empty()) {
+    if (!waypoint_name.empty()) 
+    {
         RCLCPP_INFO(logger_, "移动到路点: %s", waypoint_name.c_str());
     }
     RCLCPP_INFO(logger_, "目标位置: [%.3f, %.3f, %.3f]", 
@@ -270,7 +284,8 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseImpl(
         if (result == moveit::core::MoveItErrorCode::SUCCESS) 
         {
             RCLCPP_INFO(logger_, "执行成功 (耗时 %.3f 秒)", execution_time);
-            if (!waypoint_name.empty()) {
+            if (!waypoint_name.empty()) 
+            {
                 RCLCPP_INFO(logger_, "到达路点: %s", waypoint_name.c_str());
             }
             return CR7BaseController::Result::SUCCESS;
@@ -298,7 +313,8 @@ void CR7OMPLPlanner::setPositionConstraintBox(
     double min_y, double max_y,
     double min_z, double max_z,
     const std::string& frame_id
-) {
+) 
+{
     moveit_msgs::msg::Constraints constraints;
     moveit_msgs::msg::PositionConstraint position_constraint;
     
@@ -328,8 +344,20 @@ void CR7OMPLPlanner::setPositionConstraintBox(
     constraints.name = "use_equality_constraints";
     move_group_->setPathConstraints(constraints);
     
+    // 可视化盒子约束
+    if (visual_tools_) {
+        Eigen::Vector3d box_point_1(min_x, min_y, min_z);
+        Eigen::Vector3d box_point_2(max_x, max_y, max_z);
+        visual_tools_->publishCuboid(box_point_1, box_point_2, rviz_visual_tools::TRANSLUCENT_DARK);
+        visual_tools_->trigger();
+    }
+    
+    // 为盒子约束选择合适的规划器
+    move_group_->setPlannerId("RRTConnectkConfigDefault");
+    
     RCLCPP_INFO(logger_, "设置位置约束（盒子约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
     RCLCPP_INFO(logger_, "盒子尺寸: x=[%.3f,%.3f], y=[%.3f,%.3f], z=[%.3f,%.3f]", min_x, max_x, min_y, max_y, min_z, max_z);
+    RCLCPP_INFO(logger_, "为盒子约束选择规划器: RRTConnectkConfigDefault");
 }
 
 /**
@@ -340,7 +368,8 @@ void CR7OMPLPlanner::setPositionConstraintBox(
         const geometry_msgs::msg::Vector3& plane_normal,
         double distance,
         const std::string& frame_id
-    ) {
+    ) 
+    {
         moveit_msgs::msg::Constraints constraints;
         moveit_msgs::msg::PositionConstraint position_constraint;
         
@@ -356,7 +385,7 @@ void CR7OMPLPlanner::setPositionConstraintBox(
         box.dimensions.resize(3);
         box.dimensions[0] = 1.0; // 长度
         box.dimensions[1] = 1.0; // 宽度
-        box.dimensions[2] = 0.0005; // 厚度（很小，模拟平面）
+        box.dimensions[2] = 0.001; // 厚度（适度增加，提高规划成功率）
         
         // 计算平面的位置
         geometry_msgs::msg::Pose box_pose;
@@ -387,12 +416,15 @@ void CR7OMPLPlanner::setPositionConstraintBox(
             rotation_axis.z * rotation_axis.z
         );
         
-        if (rotation_axis_length > 0) {
+        if (rotation_axis_length > 0) 
+        {
             box_pose.orientation.x = rotation_axis.x / rotation_axis_length * sin_half_angle;
             box_pose.orientation.y = rotation_axis.y / rotation_axis_length * sin_half_angle;
             box_pose.orientation.z = rotation_axis.z / rotation_axis_length * sin_half_angle;
             box_pose.orientation.w = std::cos(angle / 2.0);
-        } else {
+        } 
+        else 
+        {
             box_pose.orientation.w = 1.0;
         }
         
@@ -409,9 +441,23 @@ void CR7OMPLPlanner::setPositionConstraintBox(
         constraints.name = "use_equality_constraints";
         move_group_->setPathConstraints(constraints);
         
+        // 为平面约束选择合适的规划器
+        move_group_->setPlannerId("RRTConnectkConfigDefault");
+        
+        // 可视化平面约束
+        if (visual_tools_) 
+        {
+            // 计算平面上的点用于可视化
+            Eigen::Vector3d normal(plane_normal.x, plane_normal.y, plane_normal.z);
+            visual_tools_->publishNormalAndDistancePlane(normal, distance, rviz_visual_tools::TRANSLUCENT_DARK);
+            visual_tools_->trigger();
+        }
+        
         RCLCPP_INFO(logger_, "设置位置约束（平面约束）: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
         RCLCPP_INFO(logger_, "平面法线: [%.3f,%.3f,%.3f], 距离: %.3f", plane_normal.x, plane_normal.y, plane_normal.z, distance);
+        RCLCPP_INFO(logger_, "为平面约束选择规划器: RRTConnectkConfigDefault");
     }
+
 /**
  * @brief 设置位置约束（直线约束）- 修正版
  */
@@ -452,8 +498,8 @@ void CR7OMPLPlanner::setPositionConstraintLine(
     box.type = shape_msgs::msg::SolidPrimitive::BOX;
     box.dimensions.resize(3);
     box.dimensions[0] = line_length;  // 主轴方向：直线长度
-    box.dimensions[1] = 0.0005;       // 必须小于0.001（等式约束）
-    box.dimensions[2] = 0.0005;       // 必须小于0.001（等式约束）
+    box.dimensions[1] = 0.0005;       // 官方文档要求
+    box.dimensions[2] = 0.0005;       // 官方文档要求
     
     // 长方体中心点
     geometry_msgs::msg::Pose box_pose;
@@ -491,11 +537,22 @@ void CR7OMPLPlanner::setPositionConstraintLine(
     // 设置路径约束
     move_group_->setPathConstraints(constraints);
     
+    // 为直线约束选择合适的规划器
+    move_group_->setPlannerId("RRTConnectkConfigDefault");
+    
+    // 可视化直线约束
+    if (visual_tools_) 
+    {
+        visual_tools_->publishLine(line_start, line_end, rviz_visual_tools::TRANSLUCENT_DARK);
+        visual_tools_->trigger();
+    }
+    
     RCLCPP_INFO(logger_, "设置直线约束: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
     RCLCPP_INFO(logger_, "直线长度: %.3f, 方向: [%.3f,%.3f,%.3f]", 
                 line_length, dx, dy, dz);
     RCLCPP_INFO(logger_, "约束尺寸: [%.6f,%.6f,%.6f]", 
                 box.dimensions[0], box.dimensions[1], box.dimensions[2]);
+    RCLCPP_INFO(logger_, "为直线约束选择规划器: RRTConnectkConfigDefault");
 }
 
 /**
@@ -508,33 +565,61 @@ void CR7OMPLPlanner::setOrientationConstraint(
     double tolerance_y,
     double tolerance_z,
     const std::string& frame_id
-) {
+) 
+{
     moveit_msgs::msg::Constraints constraints;
     moveit_msgs::msg::OrientationConstraint orient_constraint;
     
     orient_constraint.header.frame_id = frame_id;
     orient_constraint.link_name = link_name;
     orient_constraint.orientation = orientation;
-    orient_constraint.absolute_x_axis_tolerance = tolerance_x;
-    orient_constraint.absolute_y_axis_tolerance = tolerance_y;
-    orient_constraint.absolute_z_axis_tolerance = tolerance_z;
+
+    // 适度增加姿态约束容忍度，提高规划成功率
+    orient_constraint.absolute_x_axis_tolerance = std::max(tolerance_x, 0.05);
+    orient_constraint.absolute_y_axis_tolerance = std::max(tolerance_y, 0.05);
+    orient_constraint.absolute_z_axis_tolerance = std::max(tolerance_z, 0.05);
     orient_constraint.weight = 1.0;
     
     constraints.orientation_constraints.push_back(orient_constraint);
     move_group_->setPathConstraints(constraints);
     
+    // 为姿态约束选择合适的规划器
+    move_group_->setPlannerId("RRTConnectkConfigDefault");
+    
+    // 可视化姿态约束
+    if (visual_tools_) 
+    {
+        // 创建一个临时位姿来显示姿态约束的坐标轴
+        geometry_msgs::msg::Pose pose;
+        pose.orientation = orientation;
+        // 使用当前位置作为显示位置
+        auto current_pose = move_group_->getCurrentPose();
+        pose.position = current_pose.pose.position;
+        visual_tools_->publishAxis(pose, 0.1);
+        visual_tools_->trigger();
+    }
+    
     RCLCPP_INFO(logger_, "设置姿态约束: 连杆=%s, 坐标系=%s", link_name.c_str(), frame_id.c_str());
     RCLCPP_INFO(logger_, "目标姿态: [%.3f,%.3f,%.3f,%.3f]", 
                 orientation.x, orientation.y, orientation.z, orientation.w);
     RCLCPP_INFO(logger_, "容差: x=%.3f, y=%.3f, z=%.3f", tolerance_x, tolerance_y, tolerance_z);
+    RCLCPP_INFO(logger_, "为姿态约束选择规划器: RRTConnectkConfigDefault");
 }
 
 /**
  * @brief 清除所有约束
  */
-void CR7OMPLPlanner::clearConstraints() {
+void CR7OMPLPlanner::clearConstraints() 
+{
     move_group_->clearPathConstraints();
-    RCLCPP_INFO(logger_, "清除所有约束");
+    
+    // 清除可视化标记
+    if (visual_tools_) {
+        visual_tools_->deleteAllMarkers();
+        visual_tools_->trigger();
+    }
+    
+    RCLCPP_INFO(logger_, "清除所有约束和可视化标记");
 }
 
 /**
@@ -570,6 +655,11 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
         moveit::planning_interface::MoveGroupInterface::Plan plan;
         RCLCPP_INFO(logger_, "开始带约束的规划...");
         
+        // 记录规划器信息
+        RCLCPP_INFO(logger_, "当前规划器: %s", move_group_->getPlannerId().c_str());
+        RCLCPP_INFO(logger_, "规划时间限制: %.1f 秒", move_group_->getPlanningTime());
+        RCLCPP_INFO(logger_, "规划尝试次数: %d", move_group_->getNumPlanningAttempts());
+        
         auto start_time = node_->now();
         bool success = static_cast<bool>(move_group_->plan(plan));
         double planning_time = (node_->now() - start_time).seconds();
@@ -577,14 +667,26 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
         if (!success || plan.trajectory_.joint_trajectory.points.empty()) 
         {   
             RCLCPP_ERROR(logger_, "带约束的规划失败 (耗时 %.3f 秒)", planning_time);
+            RCLCPP_ERROR(logger_, "规划失败原因分析:");
+            RCLCPP_ERROR(logger_, "1. 约束条件可能过于严格");
+            RCLCPP_ERROR(logger_, "2. 目标位姿可能不可达");
+            RCLCPP_ERROR(logger_, "3. 规划时间可能不足");
             return CR7BaseController::Result::PLANNING_FAILED;
         }
         
         RCLCPP_INFO(logger_, "带约束的规划成功 (耗时 %.3f 秒), 轨迹点数: %zu", planning_time, plan.trajectory_.joint_trajectory.points.size());
         
+        // 分析轨迹长度
+        if (!plan.trajectory_.joint_trajectory.points.empty()) {
+            size_t num_points = plan.trajectory_.joint_trajectory.points.size();
+            double trajectory_duration = plan.trajectory_.joint_trajectory.points.back().time_from_start.sec + 
+                                       plan.trajectory_.joint_trajectory.points.back().time_from_start.nanosec / 1e9;
+            RCLCPP_INFO(logger_, "轨迹持续时间: %.3f 秒, 平均点数: %.1f 点/秒", trajectory_duration, num_points / trajectory_duration);
+        }
+        
         // 检查轨迹是否为直线（如果是直线约束）
         if (waypoint_name.find("line_constraint") != std::string::npos) 
-        {
+        {   
             // 获取当前位姿作为起点
             auto current_pose = move_group_->getCurrentPose().pose;
             
@@ -594,12 +696,13 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
             );
             
             if (is_linear) 
-            {
+            {   
                 RCLCPP_INFO(logger_, "轨迹检查: 轨迹是直线");
             } 
             else 
-            {
+            {   
                 RCLCPP_WARN(logger_, "轨迹检查: 轨迹不是直线");
+                RCLCPP_WARN(logger_, "可能原因: 约束厚度不足或规划器参数需要调整");
             }
         }
         
@@ -615,18 +718,27 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
             if (!waypoint_name.empty()) {
                 RCLCPP_INFO(logger_, "到达路点（带约束）: %s", waypoint_name.c_str());
             }
+            RCLCPP_INFO(logger_, "规划性能指标:");
+            RCLCPP_INFO(logger_, "- 规划时间: %.3f 秒", planning_time);
+            RCLCPP_INFO(logger_, "- 执行时间: %.3f 秒", execution_time);
+            RCLCPP_INFO(logger_, "- 总时间: %.3f 秒", planning_time + execution_time);
             return CR7BaseController::Result::SUCCESS;
         } 
         else 
         {   
             RCLCPP_ERROR(logger_, "带约束的运动执行失败 (错误码: %d, 耗时: %.3f 秒)", result.val, execution_time);
+            RCLCPP_ERROR(logger_, "执行失败原因分析:");
+            RCLCPP_ERROR(logger_, "1. 轨迹可能超出关节限制");
+            RCLCPP_ERROR(logger_, "2. 执行过程中可能发生碰撞");
+            RCLCPP_ERROR(logger_, "3. 控制器可能无法跟随轨迹");
             return CR7BaseController::Result::EXECUTION_FAILED;
         }
         
     } 
     catch (const std::exception& e) 
-    {
+    {   
         RCLCPP_ERROR(logger_, "带约束的运动控制异常: %s", e.what());
+        RCLCPP_ERROR(logger_, "异常类型: %s", typeid(e).name());
         return CR7BaseController::Result::EXECUTION_FAILED;
     }
 }

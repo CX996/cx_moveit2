@@ -19,6 +19,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <geometry_msgs/msg/pose.hpp>
+#include <moveit_visual_tools/moveit_visual_tools.h>
 
 // 添加TF2头文件
 #include <tf2_ros/buffer.h>
@@ -43,9 +44,9 @@ struct OMPLConfig {
     double goal_orientation_tolerance; ///< 目标姿态容差
 
     OMPLConfig() 
-        : planner_id("RRTstarkConfigDefault"),
-          planning_time(60.0),
-          num_planning_attempts(1000),
+        : planner_id("RRTConnectkConfigDefault"),  // RRTConnect更适合约束规划
+          planning_time(30.0),  // 减少规划时间
+          num_planning_attempts(10),  // 减少尝试次数
           velocity_scale(0.3),
           acceleration_scale(0.1),
           goal_position_tolerance(0.05),
@@ -314,7 +315,7 @@ private:
      * @param target_pose 目标位姿
      * @param waypoint_name 路点名称（用于日志）
      * @return CR7BaseController::Result 规划结果
-     */                                     
+     */                                      
     CR7BaseController::Result moveToPoseImpl(
         const geometry_msgs::msg::Pose& target_pose,
         const std::string& waypoint_name
@@ -329,6 +330,9 @@ private:
     // 添加坐标变换监听器
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_; ///< TF2缓冲区
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_; ///< TF2监听器
+    
+    // 添加MoveItVisualTools用于可视化
+    std::shared_ptr<moveit_visual_tools::MoveItVisualTools> visual_tools_; ///< 可视化工具
 };
 
 }  // namespace cr7_controller
