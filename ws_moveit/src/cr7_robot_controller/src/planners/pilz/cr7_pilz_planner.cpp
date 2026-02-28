@@ -381,23 +381,26 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
     
     try 
     {
+        // 设置管道
+        move_group_->setPlanningPipelineId("pilz_industrial_motion_planner");
+
         // 1. 设置规划器
         move_group_->setPlannerId(planner_id);
         RCLCPP_INFO(logger_, "使用规划器: %s", planner_id.c_str());
         
         // 2. 设置规划参数
-        move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
-        move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
+        // move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
+        // move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
         
         move_group_->clearPathConstraints(); // 清除约束条件
 
         // 3. 设置PILZ特定的约束
         if (planner_id == "LIN") 
         {
-            // // 为直线运动设置约束
-            // moveit_msgs::msg::Constraints path_constraints;
+            // 为直线运动设置约束
+            moveit_msgs::msg::Constraints path_constraints;
             
-            // // 位置约束 - 直线运动
+            // 位置约束 - 直线运动
             // moveit_msgs::msg::PositionConstraint pos_constraint;
             // pos_constraint.header.frame_id = move_group_->getPlanningFrame();
             // pos_constraint.link_name = move_group_->getEndEffectorLink();
@@ -412,9 +415,10 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
             // geometry_msgs::msg::Pose sphere_pose;
             // sphere_pose.orientation.w = 1.0;
             
-            // // pos_constraint.constraint_region.primitives.push_back(sphere);
-            // // pos_constraint.constraint_region.primitive_poses.push_back(sphere_pose);
-            
+            // pos_constraint.constraint_region.primitives.push_back(sphere);
+            // pos_constraint.constraint_region.primitive_poses.push_back(sphere_pose);
+            // path_constraints.position_constraints.push_back(pos_constraint);
+
             // // 方向约束 - 保持末端朝向
             // auto current_pose = move_group_->getCurrentPose().pose;
             // moveit_msgs::msg::OrientationConstraint orient_constraint;
@@ -426,11 +430,11 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
             // orient_constraint.absolute_z_axis_tolerance = config.orientation_tolerance;
             // orient_constraint.weight = 1.0;
             
-            // path_constraints.position_constraints.push_back(pos_constraint);
+
             // path_constraints.orientation_constraints.push_back(orient_constraint);
             
             // move_group_->setPathConstraints(path_constraints);
-            RCLCPP_INFO(logger_, "已设置直线约束，最大偏差: %.3f m", config.max_deviation);
+            // RCLCPP_INFO(logger_, "已设置直线约束，最大偏差: %.3f m", config.max_deviation);
         }
         
         // 4. 清除目标并设置新目标

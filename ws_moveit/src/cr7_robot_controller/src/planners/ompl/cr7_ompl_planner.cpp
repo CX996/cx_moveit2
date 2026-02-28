@@ -50,7 +50,16 @@ CR7OMPLPlanner::CR7OMPLPlanner(
     // 初始化MoveItVisualTools
     std::string base_frame = move_group_->getPlanningFrame();
     visual_tools_ = std::make_shared<moveit_visual_tools::MoveItVisualTools>(
-        node, base_frame, rviz_visual_tools::RVIZ_MARKER_TOPIC, move_group_->getRobotModel());
+        node, "dummy_link", rviz_visual_tools::RVIZ_MARKER_TOPIC, move_group_->getRobotModel());
+
+    auto reset_demo = [this](){
+
+        move_group_->clearPathConstraints();
+        visual_tools_->deleteAllMarkers();
+        visual_tools_->trigger();
+    };
+
+    reset_demo();
     visual_tools_->loadRemoteControl();
 
     RCLCPP_INFO(logger_, "创建OMPL规划器");
@@ -61,10 +70,10 @@ CR7OMPLPlanner::CR7OMPLPlanner(
     move_group_->setPlannerId(config_.planner_id);
     move_group_->setPlanningTime(config_.planning_time);
     move_group_->setNumPlanningAttempts(config_.num_planning_attempts);
-    move_group_->setMaxVelocityScalingFactor(config_.velocity_scale);
-    move_group_->setMaxAccelerationScalingFactor(config_.acceleration_scale);
-    move_group_->setGoalPositionTolerance(config_.goal_position_tolerance);
-    move_group_->setGoalOrientationTolerance(config_.goal_orientation_tolerance);
+    // move_group_->setMaxVelocityScalingFactor(config_.velocity_scale);
+    // move_group_->setMaxAccelerationScalingFactor(config_.acceleration_scale);
+    // move_group_->setGoalPositionTolerance(config_.goal_position_tolerance);
+    // move_group_->setGoalOrientationTolerance(config_.goal_orientation_tolerance);
     
     // 添加约束规划的特殊设置
     move_group_->setWorkspace(-2.0, -2.0, -2.0, 2.0, 2.0, 2.0);  // 设置更大的工作空间
@@ -527,9 +536,9 @@ void CR7OMPLPlanner::setPositionConstraintLine(
     box_pose.orientation.w = rotation.w();
     
     // 添加约束区域
-    position_constraint.constraint_region.primitives.push_back(box);
-    position_constraint.constraint_region.primitive_poses.push_back(box_pose);
-    constraints.position_constraints.push_back(position_constraint);
+    position_constraint.constraint_region.primitives.emplace_back(box);
+    position_constraint.constraint_region.primitive_poses.emplace_back(box_pose);
+    constraints.position_constraints.emplace_back(position_constraint);
     
     // 关键：设置等式约束标志
     constraints.name = "use_equality_constraints";
@@ -543,6 +552,8 @@ void CR7OMPLPlanner::setPositionConstraintLine(
     // 可视化直线约束
     if (visual_tools_) 
     {
+        // visual_tools_->publishSphere(line_start, rviz_visual_tools::RED, 0.05);
+        // visual_tools_->publishSphere(line_end, rviz_visual_tools::GREEN, 0.05);
         visual_tools_->publishLine(line_start, line_end, rviz_visual_tools::TRANSLUCENT_DARK);
         visual_tools_->trigger();
     }
@@ -658,7 +669,6 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithConstraints(
         // 记录规划器信息
         RCLCPP_INFO(logger_, "当前规划器: %s", move_group_->getPlannerId().c_str());
         RCLCPP_INFO(logger_, "规划时间限制: %.1f 秒", move_group_->getPlanningTime());
-        RCLCPP_INFO(logger_, "规划尝试次数: %d", move_group_->getNumPlanningAttempts());
         
         auto start_time = node_->now();
         bool success = static_cast<bool>(move_group_->plan(plan));
