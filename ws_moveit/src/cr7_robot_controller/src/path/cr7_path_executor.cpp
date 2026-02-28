@@ -194,9 +194,9 @@ CR7BaseController::Result CR7PathExecutor::executePilzTestPath()
         
         // 创建一个简单的目标点
         geometry_msgs::msg::Pose target_pose = current_pose.pose;
-        // target_pose.position.x += 0.1; // 向前移动10cm
-        // target_pose.position.y += 0.1; // 向左移动10cm
-        target_pose.position.z += 0.4; // 向左移动10cm
+        target_pose.position.x += 0.0; // 向前移动0mm
+        target_pose.position.y += 0.0; // 向左移动0mm
+        target_pose.position.z += 0.4; // 向左移动400mm
         
         // 使用PILZ规划器执行直线运动
         if (pilz_planner_) 
@@ -310,34 +310,39 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
                                   0.77772, 0.37753, 0.028286,
                                   -0.37331, 0.8992, -0.084073, 0.21217);
         
-        // 创建焊接路径
-        std::vector<Waypoint> welding_waypoints;
-        welding_waypoints.push_back(start_wp);
-        welding_waypoints.push_back(end_wp);
-        
-        RCLCPP_INFO(logger_, "焊接路径点数量: %zu", welding_waypoints.size());
         RCLCPP_INFO(logger_, "起点位置: [%.3f, %.3f, %.3f]", 
                    start_wp.x, start_wp.y, start_wp.z);
         RCLCPP_INFO(logger_, "终点位置: [%.3f, %.3f, %.3f]", 
                    end_wp.x, end_wp.y, end_wp.z);
         
-        // 使用OMPL规划器执行路径
+        // 首先使用OMPL规划到起点
         if (ompl_planner_) 
         {
-            // 使用OMPL规划器执行路径
-            RCLCPP_INFO(logger_, "使用OMPL规划器执行焊接路径测试");
-            ompl_planner_->executeWaypoints(welding_waypoints);
-            return CR7BaseController::Result::SUCCESS;
+            RCLCPP_INFO(logger_, "使用OMPL规划器规划到起点");
+            std::vector<Waypoint> start_waypoints;
+            start_waypoints.push_back(start_wp);
+            auto result = ompl_planner_->moveToPose(start_waypoints, "start_wp");
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "OMPL规划到起点失败");
+                return result;
+            }
         } 
-        else if (pilz_planner_) 
+        else 
         {
-            // 使用PILZ规划器执行路径
-            RCLCPP_INFO(logger_, "使用PILZ规划器执行焊接路径测试");
+            RCLCPP_ERROR(logger_, "OMPL规划器不可用");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+        
+        // 然后使用PILZ规划到终点
+        if (pilz_planner_) 
+        {
+            RCLCPP_INFO(logger_, "使用PILZ规划器规划到终点");
             return pilz_planner_->moveWithPilzLin(end_wp.toPose());
         } 
         else 
         {
-            RCLCPP_ERROR(logger_, "没有可用的规划器");
+            RCLCPP_ERROR(logger_, "PILZ规划器不可用");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
     } 
@@ -364,90 +369,92 @@ CR7BaseController::Result CR7PathExecutor::executeOMPLConstraintTest()
         RCLCPP_INFO(logger_, "当前位置: [%.3f, %.3f, %.3f]", 
                    current_pose.position.x, current_pose.position.y, current_pose.position.z);
         
-        // 创建目标位姿
+        // 测试1: 盒子约束
+        RCLCPP_INFO(logger_, "\n=======================================");
+        RCLCPP_INFO(logger_, "测试1: 盒子约束");
+        RCLCPP_INFO(logger_, "=======================================");
+        
         geometry_msgs::msg::Pose target_pose = current_pose;
-        // target_pose.position.z += 0.1; // 向上移动20cm
-        // target_pose.position.y += 0.1; // 向前移动10cm
-        // target_pose.position.x += 0.1; // 向左移动10cm
+        target_pose.position.z += 0.1; // 向上移动10cm
         
-        // // 测试1: 盒子约束
-        // RCLCPP_INFO(logger_, "\n=======================================");
-        // RCLCPP_INFO(logger_, "测试1: 盒子约束");
-        // RCLCPP_INFO(logger_, "=======================================");
-        
-        // if (ompl_planner_) {
-        //     auto result = ompl_planner_->moveToPoseWithBoxConstraint(
-        //         target_pose,
-        //         "welding_tcp", // 假设末端连杆名称为welding_tcp
-        //         current_pose.position.x - 0.15, current_pose.position.x + 0.15,
-        //         current_pose.position.y - 0.15, current_pose.position.y + 0.15,
-        //         current_pose.position.z - 0.15, current_pose.position.z + 0.15,
-        //         "base_link",
-        //         "box_constraint_test"
-        //     );
+        if (ompl_planner_) {
+            auto result = ompl_planner_->moveToPoseWithBoxConstraint(
+                target_pose,
+                "welding_tcp", // 假设末端连杆名称为welding_tcp
+                current_pose.position.x - 0.15, current_pose.position.x + 0.15,
+                current_pose.position.y - 0.15, current_pose.position.y + 0.15,
+                current_pose.position.z - 0.15, current_pose.position.z + 0.15,
+                "base_link",
+                "box_constraint_test"
+            );
 
-        //     if (result == CR7BaseController::Result::SUCCESS)
-        //     {
-        //         RCLCPP_INFO(logger_, "✓ 盒子约束测试成功");
-        //     } 
-        //     else 
-        //     {
-        //         RCLCPP_ERROR(logger_, "✗ 盒子约束测试失败");
-        //     }
+            if (result == CR7BaseController::Result::SUCCESS)
+            {
+                RCLCPP_INFO(logger_, "✓ 盒子约束测试成功");
+                // 更新当前位姿为实际终点
+                current_pose = move_group_->getCurrentPose().pose;
+                RCLCPP_INFO(logger_, "更新后位置: [%.3f, %.3f, %.3f]", 
+                           current_pose.position.x, current_pose.position.y, current_pose.position.z);
+            } 
+            else 
+            {
+                RCLCPP_ERROR(logger_, "✗ 盒子约束测试失败");
+                return result;
+            }
 
-        // } 
-        // else 
-        // {
-        //     RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
-        //     return CR7BaseController::Result::ROBOT_NOT_READY;
-        // }
+        } 
+        else 
+        {
+            RCLCPP_ERROR(logger_, "OMPL规划器未初始化");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
         
-        // // 测试2: 平面约束
-        // target_pose.position.x += 0.01; // 向前移动10cm
-        // target_pose.position.y += 0.01; // 向左移动10cm
+        // 测试2: 平面约束
+        RCLCPP_INFO(logger_, "\n=======================================");
+        RCLCPP_INFO(logger_, "测试2: 平面约束");
+        RCLCPP_INFO(logger_, "=======================================");
+        
+        target_pose = current_pose;
+        target_pose.position.y += 0.2; // 向前移动20cm
 
-        // RCLCPP_INFO(logger_, "\n=======================================");
-        // RCLCPP_INFO(logger_, "测试2: 平面约束");
-        // RCLCPP_INFO(logger_, "=======================================");
+        geometry_msgs::msg::Vector3 plane_normal;
+        plane_normal.x = 0.0;
+        plane_normal.y = 0.0;
+        plane_normal.z = 1.0; // 水平面
         
-        // geometry_msgs::msg::Vector3 plane_normal;
-        // plane_normal.x = 0.0;
-        // plane_normal.y = 0.0;
-        // plane_normal.z = 1.0; // 水平面
-        
-        // if (ompl_planner_) {
-        //     auto result = ompl_planner_->moveToPoseWithPlaneConstraint(
-        //         target_pose,
-        //         "welding_tcp",
-        //         plane_normal,
-        //         target_pose.position.z,
-        //         "base_link",
-        //         "plane_constraint_test"
-        //     );
+        if (ompl_planner_) {
+            auto result = ompl_planner_->moveToPoseWithPlaneConstraint(
+                target_pose,
+                "welding_tcp",
+                plane_normal,
+                target_pose.position.z,
+                "base_link",
+                "plane_constraint_test"
+            );
 
-        //     if (result == CR7BaseController::Result::SUCCESS)
-        //     {
-        //         RCLCPP_INFO(logger_, "✓ 平面约束测试成功");
-        //     } 
-        //     else 
-        //     {
-        //         RCLCPP_ERROR(logger_, "✗ 平面约束测试失败");
-        //     }
-        // }
+            if (result == CR7BaseController::Result::SUCCESS)
+            {
+                RCLCPP_INFO(logger_, "✓ 平面约束测试成功");
+                // 更新当前位姿为实际终点
+                current_pose = move_group_->getCurrentPose().pose;
+                RCLCPP_INFO(logger_, "更新后位置: [%.3f, %.3f, %.3f]", 
+                           current_pose.position.x, current_pose.position.y, current_pose.position.z);
+            } 
+            else 
+            {
+                RCLCPP_ERROR(logger_, "✗ 平面约束测试失败");
+                return result;
+            }
+        }
         
         // 测试3: 直线约束
-        // target_pose.position.y += 0.83; // 向前移动10cm
-        target_pose.position.z += 0.4; // 向左移动10cm
-
-        // target_pose.orientation.x = -0.37331;
-        // target_pose.orientation.y = 0.8992;
-        // target_pose.orientation.z = -0.084073;
-        // target_pose.orientation.w = 0.21217;
-
         RCLCPP_INFO(logger_, "\n=======================================");
         RCLCPP_INFO(logger_, "测试3: 直线约束");
         RCLCPP_INFO(logger_, "=======================================");
         
+        target_pose = current_pose;
+        target_pose.position.x += 0.2; // 向左移动20cm
+
         geometry_msgs::msg::Point line_start;
         line_start.x = current_pose.position.x;
         line_start.y = current_pose.position.y;
@@ -471,39 +478,53 @@ CR7BaseController::Result CR7PathExecutor::executeOMPLConstraintTest()
             if (result == CR7BaseController::Result::SUCCESS)
             {
                 RCLCPP_INFO(logger_, "✓ 直线约束测试成功");
+                // 更新当前位姿为实际终点
+                current_pose = move_group_->getCurrentPose().pose;
+                RCLCPP_INFO(logger_, "更新后位置: [%.3f, %.3f, %.3f]", 
+                           current_pose.position.x, current_pose.position.y, current_pose.position.z);
             } 
             else 
             {
                 RCLCPP_ERROR(logger_, "✗ 直线约束测试失败");
+                return result;
             }
         }
         
         // 测试4: 姿态约束
-        // target_pose.position.x -= 0.1; // 向前移动10cm
-        // target_pose.position.y -= 0.1; // 向左移动10cm
-        // RCLCPP_INFO(logger_, "\n=======================================");
-        // RCLCPP_INFO(logger_, "测试4: 姿态约束");
-        // RCLCPP_INFO(logger_, "=======================================");
+        RCLCPP_INFO(logger_, "\n=======================================");
+        RCLCPP_INFO(logger_, "测试4: 姿态约束");
+        RCLCPP_INFO(logger_, "=======================================");
         
-        // if (ompl_planner_) {
-        //     auto result = ompl_planner_->moveToPoseWithOrientationConstraint(
-        //         target_pose,
-        //         "welding_tcp",
-        //         current_pose.orientation,
-        //         0.01, 0.01, 0.01, // 小容差，保持姿态不变
-        //         "base_link",
-        //         "orientation_constraint_test"
-        //     );
+        target_pose = current_pose;
+        target_pose.position.y -= 0.2; // 向后移动20cm
+        
+        // 保持相同的姿态
+        geometry_msgs::msg::Quaternion target_orientation = current_pose.orientation;
+        
+        if (ompl_planner_) {
+            auto result = ompl_planner_->moveToPoseWithOrientationConstraint(
+                target_pose,
+                "welding_tcp",
+                target_orientation,
+                0.01, 0.01, 0.01, // 小容差，保持姿态不变
+                "base_link",
+                "orientation_constraint_test"
+            );
             
-        //     if (result == CR7BaseController::Result::SUCCESS)
-        //     {
-        //         RCLCPP_INFO(logger_, "✓ 姿态约束测试成功");
-        //     } 
-        //     else 
-        //     {
-        //         RCLCPP_ERROR(logger_, "✗ 姿态约束测试失败");
-        //     }
-        // }
+            if (result == CR7BaseController::Result::SUCCESS)
+            {
+                RCLCPP_INFO(logger_, "✓ 姿态约束测试成功");
+                // 更新当前位姿为实际终点
+                current_pose = move_group_->getCurrentPose().pose;
+                RCLCPP_INFO(logger_, "更新后位置: [%.3f, %.3f, %.3f]", 
+                           current_pose.position.x, current_pose.position.y, current_pose.position.z);
+            } 
+            else 
+            {
+                RCLCPP_ERROR(logger_, "✗ 姿态约束测试失败");
+                return result;
+            }
+        }
         
         RCLCPP_INFO(logger_, "\n=======================================");
         RCLCPP_INFO(logger_, "OMPL约束规划测试完成");

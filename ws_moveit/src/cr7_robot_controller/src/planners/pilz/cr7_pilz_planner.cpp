@@ -235,17 +235,13 @@ CR7BaseController::Result CR7PilzPlanner::testPilzPlanner(PilzPlanner planner_ty
             result = moveWithPilzPtp(target_pose);
             break;
         case PilzPlanner::CIRC:
-            // 圆周运动需要特殊处理，这里简化测试
-            RCLCPP_WARN(logger_, "圆周运动需要中间点，使用直线运动进行测试");
-            result = moveWithPilzLin(target_pose);
+            geometry_msgs::msg::Pose intermediate_pose = current_pose;
+            result = moveWithPilzCirc(intermediate_pose, target_pose);
             break;
         default:
             result = CR7BaseController::Result::INVALID_INPUT;
             break;
     }
-    
-    // RCLCPP_INFO(logger_, "PILZ %s 规划器测试结果: %s", 
-    //            planner_name.c_str(), CR7BaseController::resultToString(result).c_str());
     
     return result;
 }
@@ -290,71 +286,8 @@ CR7BaseController::Result CR7PilzPlanner::moveWithPilzCirc(
     const geometry_msgs::msg::Pose& target_pose,
     const PilzConfig& config)
 {
-    if (!move_group_)
-    {
-        RCLCPP_ERROR(logger_, "MoveGroup接口未初始化");
-        return CR7BaseController::Result::ROBOT_NOT_READY;
-    }
-    
     RCLCPP_INFO(logger_, "执行PILZ圆周运动");
-    
-    // 设置圆周规划器
-    if (!setPilzPlanner("CIRC")) 
-    {
-        RCLCPP_ERROR(logger_, "设置圆周规划器失败");
-        return CR7BaseController::Result::PLANNING_FAILED;
-    }
-    
-    try 
-    {
-        // 设置规划参数
-        move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
-        move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
-        
-        // 对于圆周运动，我们需要使用不同的接口
-        // 这里简化处理，使用标准的位姿目标规划
-        move_group_->setPoseTarget(target_pose);
-        
-        // 规划运动
-        moveit::planning_interface::MoveGroupInterface::Plan plan;
-        RCLCPP_INFO(logger_, "开始PILZ圆周运动规划...");
-        
-        auto start_time = node_->now();
-        bool success = static_cast<bool>(move_group_->plan(plan));
-        double planning_time = (node_->now() - start_time).seconds();
-        
-        if (!success) 
-        {
-            RCLCPP_ERROR(logger_, "圆周运动规划失败 (耗时 %.3f 秒)", planning_time);
-            return CR7BaseController::Result::PLANNING_FAILED;
-        }
-        
-        RCLCPP_INFO(logger_, "✓ 圆周运动规划成功 (耗时 %.3f 秒)", planning_time);
-        RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
-        
-        // 执行规划
-        RCLCPP_INFO(logger_, "开始执行圆周运动...");
-        start_time = node_->now();
-        auto result = move_group_->execute(plan);
-        double execution_time = (node_->now() - start_time).seconds();
-        
-        if (result == moveit::core::MoveItErrorCode::SUCCESS) 
-        {
-            RCLCPP_INFO(logger_, "✓ 圆周运动执行成功 (耗时 %.3f 秒)", execution_time);
-            return CR7BaseController::Result::SUCCESS;
-        } 
-        else 
-        {
-            RCLCPP_ERROR(logger_, "圆周运动执行失败 (错误码: %d)", result.val);
-            return CR7BaseController::Result::EXECUTION_FAILED;
-        }
-        
-    } 
-    catch (const std::exception& e)
-    {
-        RCLCPP_ERROR(logger_, "圆周运动异常: %s", e.what());
-        return CR7BaseController::Result::EXECUTION_FAILED;
-    }
+    return executePilzPlan(target_pose, "CIRC", config, intermediate_pose);
 }
 
 // ============================================================================
@@ -370,7 +303,8 @@ CR7BaseController::Result CR7PilzPlanner::moveWithPilzCirc(
 CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
     const geometry_msgs::msg::Pose& target_pose,
     const std::string& planner_id,
-    const PilzConfig& config)
+    const PilzConfig& config,
+    const geometry_msgs::msg::Pose& intermediate_pose = geometry_msgs::msg::Pose()) // 中间点，用于圆周运动
 {
     
     if (!move_group_)
@@ -381,128 +315,82 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
     
     try 
     {
-        // 设置管道
+        // 1. 设置管道
         move_group_->setPlanningPipelineId("pilz_industrial_motion_planner");
 
-        // 1. 设置规划器
+        // 2. 设置规划器
         move_group_->setPlannerId(planner_id);
         RCLCPP_INFO(logger_, "使用规划器: %s", planner_id.c_str());
         
-        // 2. 设置规划参数
-        // move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
-        // move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
-        
-        move_group_->clearPathConstraints(); // 清除约束条件
-
-        // 3. 设置PILZ特定的约束
-        if (planner_id == "LIN") 
-        {
-            // 为直线运动设置约束
-            moveit_msgs::msg::Constraints path_constraints;
-            
-            // 位置约束 - 直线运动
-            // moveit_msgs::msg::PositionConstraint pos_constraint;
-            // pos_constraint.header.frame_id = move_group_->getPlanningFrame();
-            // pos_constraint.link_name = move_group_->getEndEffectorLink();
-            // pos_constraint.weight = 1.0;
-            
-            // // 创建球形约束区域
-            // shape_msgs::msg::SolidPrimitive sphere;
-            // sphere.type = shape_msgs::msg::SolidPrimitive::SPHERE;
-            // sphere.dimensions.resize(1);
-            // sphere.dimensions[0] = config.max_deviation;  // 允许的最大偏差
-            
-            // geometry_msgs::msg::Pose sphere_pose;
-            // sphere_pose.orientation.w = 1.0;
-            
-            // pos_constraint.constraint_region.primitives.push_back(sphere);
-            // pos_constraint.constraint_region.primitive_poses.push_back(sphere_pose);
-            // path_constraints.position_constraints.push_back(pos_constraint);
-
-            // // 方向约束 - 保持末端朝向
-            // auto current_pose = move_group_->getCurrentPose().pose;
-            // moveit_msgs::msg::OrientationConstraint orient_constraint;
-            // orient_constraint.header.frame_id = move_group_->getPlanningFrame();
-            // orient_constraint.link_name = move_group_->getEndEffectorLink();
-            // orient_constraint.orientation = current_pose.orientation;
-            // orient_constraint.absolute_x_axis_tolerance = config.orientation_tolerance;
-            // orient_constraint.absolute_y_axis_tolerance = config.orientation_tolerance;
-            // orient_constraint.absolute_z_axis_tolerance = config.orientation_tolerance;
-            // orient_constraint.weight = 1.0;
-            
-
-            // path_constraints.orientation_constraints.push_back(orient_constraint);
-            
-            // move_group_->setPathConstraints(path_constraints);
-            // RCLCPP_INFO(logger_, "已设置直线约束，最大偏差: %.3f m", config.max_deviation);
-        }
+        // 3. 设置规划参数
+        move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
+        move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
         
         // 4. 清除目标并设置新目标
+        move_group_->clearPathConstraints(); // 清除约束条件
         move_group_->clearPoseTargets();
-        move_group_->setPoseTarget(target_pose);
+        
+        // 对于圆周运动，需要特殊处理
+        if (planner_id == "CIRC") 
+        {
+            RCLCPP_INFO(logger_, "使用中间点进行圆周运动规划");
+            // 注意：PILZ CIRC规划器需要通过特殊的方式设置中间点
+            // 这里使用标准的位姿目标规划作为简化处理
+            move_group_->setPoseTarget(target_pose);
+        } 
+        else {
+            move_group_->setPoseTarget(target_pose);
+        }
         
         // 5. 设置目标容差
         move_group_->setGoalTolerance(config.goal_position_tolerance);
         move_group_->setGoalOrientationTolerance(config.goal_orientation_tolerance);
         
-        // 6. 规划（减少尝试次数）
-        const int max_attempts = 20;  // 减少到3次
-        moveit::planning_interface::MoveGroupInterface::Plan best_plan;
-        bool planning_success = false;
+        // 6. 规划
+        // 使用规划器自带的多次尝试功能
+        move_group_->setNumPlanningAttempts(20); // 设置最大尝试次数
         
-        for (int attempt = 0; attempt < max_attempts; ++attempt) 
-        {
-            moveit::planning_interface::MoveGroupInterface::Plan plan;
+        moveit::planning_interface::MoveGroupInterface::Plan plan;
+        auto start_time = node_->now();
+        bool planning_success = static_cast<bool>(move_group_->plan(plan));
+        double planning_time = (node_->now() - start_time).seconds();
+        
+        if (planning_success && !plan.trajectory_.joint_trajectory.points.empty()) {
+            RCLCPP_INFO(logger_, "✓ PILZ %s 规划成功 (耗时 %.3f 秒)", 
+                       planner_id.c_str(), planning_time);
+            RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
             
-            auto start_time = node_->now();
-            bool success = static_cast<bool>(move_group_->plan(plan));
-            double planning_time = (node_->now() - start_time).seconds();
-            
-            if (success && !plan.trajectory_.joint_trajectory.points.empty()) {
-                RCLCPP_INFO(logger_, "✓ PILZ %s 规划成功 (第%d次尝试, 耗时 %.3f 秒)", 
-                           planner_id.c_str(), attempt + 1, planning_time);
-                RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
-                
-                // 验证LIN轨迹
-                if (planner_id == "LIN") {
-                    bool is_linear = true;
-                    const auto& points = plan.trajectory_.joint_trajectory.points;
-                    if (points.size() > 2) 
-                    {
-                        // 获取当前位姿作为起点
-                        auto start_pose = getCurrentPose();
+            // 验证LIN轨迹
+            if (planner_id == "LIN") {
+                bool is_linear = true;
+                const auto& points = plan.trajectory_.joint_trajectory.points;
+                if (points.size() > 2) 
+                {
+                    // 获取当前位姿作为起点
+                    auto start_pose = getCurrentPose();
 
-                        // 使用工具类中的isTrajectoryLinear方法检查轨迹是否是直线
-                        is_linear = cr7_controller::utils::TrajectoryAnalyzer::isTrajectoryLinear(
-                            plan.trajectory_, start_pose, target_pose, config.max_deviation * 10, move_group_, logger_
-                        );
-                    }
-                    
-                    if (!is_linear) 
-                    {
-                        RCLCPP_WARN(logger_, "LIN轨迹不够直，重新尝试...");
-                        continue;
-                    }
+                    // 使用工具类中的isTrajectoryLinear方法检查轨迹是否是直线
+                    is_linear = cr7_controller::utils::TrajectoryAnalyzer::isTrajectoryLinear(
+                        plan.trajectory_, start_pose, target_pose, config.max_deviation, move_group_, logger_
+                    );
                 }
                 
-                best_plan = plan;
-                planning_success = true;
-                break;
-            } 
-            else 
-            {
-                RCLCPP_WARN(logger_, "PILZ %s 规划失败 (第%d次尝试, 耗时 %.3f 秒)", 
-                           planner_id.c_str(), attempt + 1, planning_time);
-                
-                // 短暂延迟后重试
-                rclcpp::sleep_for(std::chrono::milliseconds(100));
+                if (!is_linear) 
+                {
+                    RCLCPP_WARN(logger_, "LIN轨迹不够直");
+                    planning_success = false;
+                }
             }
+        } 
+        else 
+        {
+            RCLCPP_WARN(logger_, "PILZ %s 规划失败 (耗时 %.3f 秒)", 
+                       planner_id.c_str(), planning_time);
         }
         
         if (!planning_success) 
         {
-            RCLCPP_ERROR(logger_, "PILZ %s 规划失败: 所有 %d 次尝试都未成功", 
-                        planner_id.c_str(), max_attempts);
+            RCLCPP_ERROR(logger_, "PILZ %s 规划失败", planner_id.c_str());
             move_group_->clearPathConstraints();  // 清理约束
             return CR7BaseController::Result::PLANNING_FAILED;
         }
@@ -514,7 +402,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         if (planning_success) 
         {
             std::string trajectory_prefix = "pilz_" + planner_id + "_trajectory";
-            cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(best_plan.trajectory_, trajectory_prefix, logger_);
+            cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(plan.trajectory_, trajectory_prefix, logger_);
         }
         else 
         {
@@ -524,7 +412,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         // 9. 执行规划
         RCLCPP_INFO(logger_, "开始执行PILZ %s 运动...", planner_id.c_str());
         auto start_time = node_->now();
-        auto result = move_group_->execute(best_plan);
+        auto result = move_group_->execute(plan);
         double execution_time = (node_->now() - start_time).seconds();
         
         if (result == moveit::core::MoveItErrorCode::SUCCESS) 

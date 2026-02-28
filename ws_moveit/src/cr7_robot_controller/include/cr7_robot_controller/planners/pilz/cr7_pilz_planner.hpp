@@ -183,7 +183,8 @@ private:
     CR7BaseController::Result executePilzPlan(
         const geometry_msgs::msg::Pose& target_pose,
         const std::string& planner_id,
-        const PilzConfig& config
+        const PilzConfig& config,
+        const geometry_msgs::msg::Pose& intermediate_pose = geometry_msgs::msg::Pose()
     );
     
     /**

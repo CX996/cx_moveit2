@@ -265,10 +265,13 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseImpl(
     
     try 
     {
-        // 设置目标位姿
+        // 1.设置规划管道
+        move_group_->setPlanningPipelineId("ompl_planning");
+
+        // 2.设置目标位姿
         move_group_->setPoseTarget(target_pose);
         
-        // 规划运动
+        // 3.规划运动
         moveit::planning_interface::MoveGroupInterface::Plan plan;
         RCLCPP_INFO(logger_, "开始规划...");
         
