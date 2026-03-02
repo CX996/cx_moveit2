@@ -310,12 +310,17 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器规划到起点");
+            // 设置关节姿态约束
+            ompl_planner_->setJointPoseConstraint(SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // 规划到起点
             auto result = ompl_planner_->moveToPose(start_wp.toPose(), "start_wp");
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到起点失败");
                 return result;
             }
+            // 清除关节姿态约束
+            ompl_planner_->clearJointPoseConstraints();
         } 
         else 
         {
@@ -360,12 +365,17 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
+            // 设置关节姿态约束
+            ompl_planner_->setJointPoseConstraint(SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // 规划到中间点
             auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到中间点失败");
                 return result;
             }
+            // 清除关节姿态约束
+            ompl_planner_->clearJointPoseConstraints();
         } 
         else 
         {
@@ -385,12 +395,17 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到下一段焊缝起点2");
+            // 设置关节姿态约束
+            ompl_planner_->setJointPoseConstraint(SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // 规划到下一段焊缝起点2
             auto result = ompl_planner_->moveToPose(start_wp_2.toPose(), "start_wp_2");
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到下一段焊缝起点失败");
                 return result;
             }
+            // 清除关节姿态约束
+            ompl_planner_->clearJointPoseConstraints();
         } 
         else 
         {
@@ -429,12 +444,17 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
+            // 设置关节姿态约束
+            ompl_planner_->setJointPoseConstraint(SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // 规划到中间点
             auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到中间点失败");
                 return result;
             }
+            // 清除关节姿态约束
+            ompl_planner_->clearJointPoseConstraints();
         } 
         else 
         {

@@ -113,24 +113,24 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             RCLCPP_INFO(logger_, "设置关节姿态: 肩部左、肘部上、腕部正常");
             // joint_1 (肩部): 左侧范围
             joint_constraint.joint_name = "joint_1";
-            joint_constraint.position = 0.0;
-            joint_constraint.tolerance_above = M_PI/2;  // 0到π/2
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
-            // joint_2 (肩部俯仰): 肘部向上
-            joint_constraint.joint_name = "joint_2";
-            joint_constraint.position = -M_PI/4;
-            joint_constraint.tolerance_above = M_PI/4;  // -π/2到0
-            joint_constraint.tolerance_below = M_PI/4;
+            // joint_3 (肩部俯仰): 肘部向上
+            joint_constraint.joint_name = "joint_3";
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
+            joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
             // joint_4 (腕部旋转): 正常姿态
             joint_constraint.joint_name = "joint_4";
-            joint_constraint.position = 0.0;
-            joint_constraint.tolerance_above = M_PI/2;  // -π/2到π/2
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -140,24 +140,24 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             RCLCPP_INFO(logger_, "设置关节姿态: 肩部左、肘部上、腕部翻转");
             // joint_1 (肩部): 左侧范围
             joint_constraint.joint_name = "joint_1";
-            joint_constraint.position = 0.0;
-            joint_constraint.tolerance_above = M_PI/2;  // 0到π/2
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
-            // joint_2 (肩部俯仰): 肘部向上
-            joint_constraint.joint_name = "joint_2";
-            joint_constraint.position = -M_PI/4;
-            joint_constraint.tolerance_above = M_PI/4;  // -π/2到0
-            joint_constraint.tolerance_below = M_PI/4;
+            // joint_3 (肩部俯仰): 肘部向上
+            joint_constraint.joint_name = "joint_3";
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
+            joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
-            // joint_4 (腕部旋转): 翻转姿态
+            // joint_4 (腕部旋转): 腕部翻转
             joint_constraint.joint_name = "joint_4";
-            joint_constraint.position = M_PI;
-            joint_constraint.tolerance_above = M_PI/2;  // π/2到3π/2
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -167,24 +167,24 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             RCLCPP_INFO(logger_, "设置关节姿态: 肩部左、肘部下、腕部正常");
             // joint_1 (肩部): 左侧范围
             joint_constraint.joint_name = "joint_1";
-            joint_constraint.position = 0.0;
-            joint_constraint.tolerance_above = M_PI/2;  // 0到π/2
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
-            // joint_2 (肩部俯仰): 肘部向下
-            joint_constraint.joint_name = "joint_2";
-            joint_constraint.position = M_PI/4;
-            joint_constraint.tolerance_above = M_PI/4;  // 0到π/2
-            joint_constraint.tolerance_below = M_PI/4;
+            // joint_3 (肩部俯仰): 肘部向下
+            joint_constraint.joint_name = "joint_3";
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
+            joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
             // joint_4 (腕部旋转): 正常姿态
             joint_constraint.joint_name = "joint_4";
-            joint_constraint.position = 0.0;
-            joint_constraint.tolerance_above = M_PI/2;  // -π/2到π/2
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -194,24 +194,24 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             RCLCPP_INFO(logger_, "设置关节姿态: 肩部左、肘部下、腕部翻转");
             // joint_1 (肩部): 左侧范围
             joint_constraint.joint_name = "joint_1";
-            joint_constraint.position = 0.0;
-            joint_constraint.tolerance_above = M_PI/2;  // 0到π/2
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
-            // joint_2 (肩部俯仰): 肘部向下
-            joint_constraint.joint_name = "joint_2";
-            joint_constraint.position = M_PI/4;
-            joint_constraint.tolerance_above = M_PI/4;  // 0到π/2
-            joint_constraint.tolerance_below = M_PI/4;
+            // joint_3 (肩部俯仰): 肘部向下
+            joint_constraint.joint_name = "joint_3";
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
+            joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
             // joint_4 (腕部旋转): 翻转姿态
             joint_constraint.joint_name = "joint_4";
-            joint_constraint.position = M_PI;
-            joint_constraint.tolerance_above = M_PI/2;  // π/2到3π/2
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -221,24 +221,24 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             RCLCPP_INFO(logger_, "设置关节姿态: 肩部右、肘部上、腕部正常");
             // joint_1 (肩部): 右侧范围
             joint_constraint.joint_name = "joint_1";
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
+            joint_constraint.tolerance_below = M_PI/2;
+            joint_constraint.weight = 1.0;
+            joint_constraints.push_back(joint_constraint);
+            
+            // joint_2 (肩部俯仰): 肘部向上
+            joint_constraint.joint_name = "joint_3";
             joint_constraint.position = -M_PI/2;
             joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
-            // joint_2 (肩部俯仰): 肘部向上
-            joint_constraint.joint_name = "joint_2";
-            joint_constraint.position = -M_PI/4;
-            joint_constraint.tolerance_above = M_PI/4;  // -π/2到0
-            joint_constraint.tolerance_below = M_PI/4;
-            joint_constraint.weight = 1.0;
-            joint_constraints.push_back(joint_constraint);
-            
             // joint_4 (腕部旋转): 正常姿态
             joint_constraint.joint_name = "joint_4";
-            joint_constraint.position = 0.0;
-            joint_constraint.tolerance_above = M_PI/2;  // -π/2到π/2
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -248,24 +248,24 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             RCLCPP_INFO(logger_, "设置关节姿态: 肩部右、肘部上、腕部翻转");
             // joint_1 (肩部): 右侧范围
             joint_constraint.joint_name = "joint_1";
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
+            joint_constraint.tolerance_below = M_PI/2;
+            joint_constraint.weight = 1.0;
+            joint_constraints.push_back(joint_constraint);
+            
+            // joint_2 (肩部俯仰): 肘部向上
+            joint_constraint.joint_name = "joint_3";
             joint_constraint.position = -M_PI/2;
             joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
-            // joint_2 (肩部俯仰): 肘部向上
-            joint_constraint.joint_name = "joint_2";
-            joint_constraint.position = -M_PI/4;
-            joint_constraint.tolerance_above = M_PI/4;  // -π/2到0
-            joint_constraint.tolerance_below = M_PI/4;
-            joint_constraint.weight = 1.0;
-            joint_constraints.push_back(joint_constraint);
-            
             // joint_4 (腕部旋转): 翻转姿态
             joint_constraint.joint_name = "joint_4";
-            joint_constraint.position = M_PI;
-            joint_constraint.tolerance_above = M_PI/2;  // π/2到3π/2
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -275,24 +275,24 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             RCLCPP_INFO(logger_, "设置关节姿态: 肩部右、肘部下、腕部正常");
             // joint_1 (肩部): 右侧范围
             joint_constraint.joint_name = "joint_1";
-            joint_constraint.position = -M_PI/2;
-            joint_constraint.tolerance_above = M_PI/2;  // -π到0
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
             // joint_2 (肩部俯仰): 肘部向下
-            joint_constraint.joint_name = "joint_2";
-            joint_constraint.position = M_PI/4;
-            joint_constraint.tolerance_above = M_PI/4;  // 0到π/2
-            joint_constraint.tolerance_below = M_PI/4;
+            joint_constraint.joint_name = "joint_3";
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
+            joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
             
             // joint_4 (腕部旋转): 正常姿态
             joint_constraint.joint_name = "joint_4";
-            joint_constraint.position = 0.0;
-            joint_constraint.tolerance_above = M_PI/2;  // -π/2到π/2
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -302,8 +302,8 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             RCLCPP_INFO(logger_, "设置关节姿态: 肩部右、肘部下、腕部翻转");
             // joint_1 (肩部): 右侧范围
             joint_constraint.joint_name = "joint_1";
-            joint_constraint.position = -M_PI/2;
-            joint_constraint.tolerance_above = M_PI/2;  // -π到0
+            joint_constraint.position = M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // 0到π
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -318,8 +318,8 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             
             // joint_4 (腕部旋转): 翻转姿态
             joint_constraint.joint_name = "joint_4";
-            joint_constraint.position = M_PI;
-            joint_constraint.tolerance_above = M_PI/2;  // π/2到3π/2
+            joint_constraint.position = -M_PI/2;
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
