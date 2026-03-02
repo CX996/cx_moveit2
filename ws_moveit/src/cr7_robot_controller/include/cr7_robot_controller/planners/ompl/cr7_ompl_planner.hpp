@@ -47,10 +47,10 @@ struct OMPLConfig {
         : planner_id("RRTConnectkConfigDefault"),  // RRTConnect更适合约束规划
           planning_time(30.0),  // 减少规划时间
           num_planning_attempts(50),  // 减少尝试次数
-          velocity_scale(0.3),
-          acceleration_scale(0.1),
-          goal_position_tolerance(0.1),
-          goal_orientation_tolerance(0.1)
+          velocity_scale(0.5),
+          acceleration_scale(0.5),
+          goal_position_tolerance(0.01),
+          goal_orientation_tolerance(0.01)
     {
     }
 };
@@ -245,6 +245,42 @@ public:
         double min_y, double max_y,
         double min_z, double max_z,
         const std::string& frame_id = "base_link",
+        const std::string& waypoint_name = ""
+    );
+    
+    /**
+     * @brief 关节姿态枚举
+     */
+    enum class JointPoseType {
+        SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL,    // 肩部左、肘部上、腕部正常
+        SHOULDER_LEFT_ELBOW_UP_WRIST_FLIPPED,    // 肩部左、肘部上、腕部翻转
+        SHOULDER_LEFT_ELBOW_DOWN_WRIST_NORMAL,  // 肩部左、肘部下、腕部正常
+        SHOULDER_LEFT_ELBOW_DOWN_WRIST_FLIPPED,  // 肩部左、肘部下、腕部翻转
+        SHOULDER_RIGHT_ELBOW_UP_WRIST_NORMAL,   // 肩部右、肘部上、腕部正常
+        SHOULDER_RIGHT_ELBOW_UP_WRIST_FLIPPED,   // 肩部右、肘部上、腕部翻转
+        SHOULDER_RIGHT_ELBOW_DOWN_WRIST_NORMAL, // 肩部右、肘部下、腕部正常
+        SHOULDER_RIGHT_ELBOW_DOWN_WRIST_FLIPPED  // 肩部右、肘部下、腕部翻转
+    };
+    
+    /**
+     * @brief 设置关节姿态约束
+     * @param pose_type 关节姿态类型
+     */
+    void setJointPoseConstraint(JointPoseType pose_type);
+    
+    /**
+     * @brief 清除关节姿态约束
+     */
+    void clearJointPoseConstraints();
+    
+    /**
+     * @brief 尝试不同的关节姿态规划
+     * @param target_pose 目标位姿
+     * @param waypoint_name 路点名称（用于日志）
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result moveToPoseWithJointPoseVariations(
+        const geometry_msgs::msg::Pose& target_pose,
         const std::string& waypoint_name = ""
     );
     

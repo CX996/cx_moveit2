@@ -300,22 +300,13 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
     
     try {
         // 创建特定的焊接路径点
-        // 起点
-        auto end_wp = Waypoint("end_wp", 
-                               0.76735, -0.41487, 0.023809,
-                               0.53928, 0.81723, 0.027122, 0.20142); 
-        
-        // 终点
+        // 首先使用OMPL规划到起点
         auto start_wp = Waypoint("start_wp",
                                   0.76735, 0.41487, 0.023809,
                                   -0.37331, 0.8992, -0.084073, 0.21217);
         
-        RCLCPP_INFO(logger_, "起点位置: [%.3f, %.3f, %.3f]", 
-                   start_wp.x, start_wp.y, start_wp.z);
-        RCLCPP_INFO(logger_, "终点位置: [%.3f, %.3f, %.3f]", 
-                   end_wp.x, end_wp.y, end_wp.z);
-        
-        // 首先使用OMPL规划到起点
+        RCLCPP_INFO(logger_, "起点位置: [%.3f, %.3f, %.3f]", start_wp.x, start_wp.y, start_wp.z);
+
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器规划到起点");
@@ -333,6 +324,12 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         }
         
         // 然后使用PILZ规划到终点
+        auto end_wp = Waypoint("end_wp", 
+                               0.76735, -0.41487, 0.023809,
+                               0.53928, 0.81723, 0.027122, 0.20142); 
+
+        RCLCPP_INFO(logger_, "终点位置: [%.3f, %.3f, %.3f]", end_wp.x, end_wp.y, end_wp.z);
+
         if (pilz_planner_) 
         {
             RCLCPP_INFO(logger_, "使用PILZ规划器规划到终点");
@@ -354,6 +351,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         auto middle_wp = Waypoint("middle_wp", 
                                0.48004, -0.14139, 0.52611,
                                -2.7009e-05, 0.97805, -0.00056114, 0.20836); 
+        
+        RCLCPP_INFO(logger_, "中间点位置: [%.3f, %.3f, %.3f]", middle_wp.x, middle_wp.y, middle_wp.z);
 
         if (ompl_planner_) 
         {
@@ -374,7 +373,10 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         // 然后使用OMPL规划回到下一段焊缝起点
         auto start_wp_2 = Waypoint("start_wp_2",
                                   0.76735, 0.41487, 0.023809,
-                                  -0.37331, 0.8992, -0.084073, 0.21217);     
+                                  -0.37331, 0.8992, -0.084073, 0.21217);         
+
+        RCLCPP_INFO(logger_, "下一段焊缝起点2位置: [%.3f, %.3f, %.3f]", start_wp_2.x, start_wp_2.y, start_wp_2.z);
+
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到下一段焊缝起点2");
@@ -394,7 +396,9 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         // 然后使用PILZ规划到终点
         auto end_wp_2 = Waypoint("stop_wp_2",
                                   0.76735, 0.41487, 0.423809,
-                                  -0.37331, 0.8992, -0.084073, 0.21217);    
+                                  -0.37331, 0.8992, -0.084073, 0.21217);      
+                                    
+        RCLCPP_INFO(logger_, "下一段焊缝终点2位置: [%.3f, %.3f, %.3f]", end_wp_2.x, end_wp_2.y, end_wp_2.z);
 
         if (pilz_planner_) 
         {
