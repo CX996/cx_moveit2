@@ -266,7 +266,7 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseImpl(
     try 
     {
         // 1.设置规划管道
-        move_group_->setPlanningPipelineId("ompl_planning");
+        move_group_->setPlanningPipelineId("ompl");
 
         // 2.设置目标位姿
         move_group_->setPoseTarget(target_pose);

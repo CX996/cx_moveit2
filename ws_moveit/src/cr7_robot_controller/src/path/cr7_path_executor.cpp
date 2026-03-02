@@ -301,13 +301,13 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
     try {
         // 创建特定的焊接路径点
         // 起点
-        auto start_wp = Waypoint("start_wp", 
-                               0.77772, -0.3741, 0.028286, 
+        auto end_wp = Waypoint("end_wp", 
+                               0.76735, -0.41487, 0.023809,
                                0.53928, 0.81723, 0.027122, 0.20142); 
         
         // 终点
-        Waypoint end_wp = Waypoint("end_wp",
-                                  0.77772, 0.37753, 0.028286,
+        auto start_wp = Waypoint("start_wp",
+                                  0.76735, 0.41487, 0.023809,
                                   -0.37331, 0.8992, -0.084073, 0.21217);
         
         RCLCPP_INFO(logger_, "起点位置: [%.3f, %.3f, %.3f]", 
@@ -319,9 +319,7 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器规划到起点");
-            std::vector<Waypoint> start_waypoints;
-            start_waypoints.push_back(start_wp);
-            auto result = ompl_planner_->moveToPose(start_waypoints, "start_wp");
+            auto result = ompl_planner_->moveToPose(start_wp.toPose(), "start_wp");
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到起点失败");
@@ -338,13 +336,99 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         if (pilz_planner_) 
         {
             RCLCPP_INFO(logger_, "使用PILZ规划器规划到终点");
-            return pilz_planner_->moveWithPilzLin(end_wp.toPose());
+            auto result = pilz_planner_->moveWithPilzLin(end_wp.toPose());
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "PILZ规划到终点失败");
+                return result;
+            }
         } 
         else 
         {
             RCLCPP_ERROR(logger_, "PILZ规划器不可用");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
+
+
+        // 然后使用OMPL规划回到中间点
+        auto middle_wp = Waypoint("middle_wp", 
+                               0.48004, -0.14139, 0.52611,
+                               -2.7009e-05, 0.97805, -0.00056114, 0.20836); 
+
+        if (ompl_planner_) 
+        {
+            RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
+            auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "OMPL规划到中间点失败");
+                return result;
+            }
+        } 
+        else 
+        {
+            RCLCPP_ERROR(logger_, "OMPL规划器不可用");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+
+        // 然后使用OMPL规划回到下一段焊缝起点
+        auto start_wp_2 = Waypoint("start_wp_2",
+                                  0.76735, 0.41487, 0.023809,
+                                  -0.37331, 0.8992, -0.084073, 0.21217);     
+        if (ompl_planner_) 
+        {
+            RCLCPP_INFO(logger_, "使用OMPL规划器回到下一段焊缝起点2");
+            auto result = ompl_planner_->moveToPose(start_wp_2.toPose(), "start_wp_2");
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "OMPL规划到下一段焊缝起点失败");
+                return result;
+            }
+        } 
+        else 
+        {
+            RCLCPP_ERROR(logger_, "OMPL规划器不可用");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }  
+
+        // 然后使用PILZ规划到终点
+        auto end_wp_2 = Waypoint("stop_wp_2",
+                                  0.76735, 0.41487, 0.423809,
+                                  -0.37331, 0.8992, -0.084073, 0.21217);    
+
+        if (pilz_planner_) 
+        {
+            RCLCPP_INFO(logger_, "使用PILZ规划器规划到下一段焊缝终点2");
+            auto result = pilz_planner_->moveWithPilzLin(end_wp_2.toPose());
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "PILZ规划到下一段焊缝终点失败");
+                return result;
+            }
+        } 
+        else 
+        {
+            RCLCPP_ERROR(logger_, "PILZ规划器不可用");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+
+        // 然后使用OMPL规划回到中间点
+        if (ompl_planner_) 
+        {
+            RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
+            auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "OMPL规划到中间点失败");
+                return result;
+            }
+        } 
+        else 
+        {
+            RCLCPP_ERROR(logger_, "OMPL规划器不可用");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+
     } 
     catch (const std::exception& e) 
     {

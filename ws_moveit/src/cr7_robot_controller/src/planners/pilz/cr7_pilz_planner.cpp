@@ -218,6 +218,7 @@ CR7BaseController::Result CR7PilzPlanner::testPilzPlanner(PilzPlanner planner_ty
     
     // 创建测试目标位姿
     geometry_msgs::msg::Pose target_pose = current_pose;
+geometry_msgs::msg::Pose intermediate_pose = current_pose;
     target_pose.position.x += 0.1;  // 向前移动10cm
     target_pose.position.y += 0.1;  // 向前移动10cm  
     
@@ -235,7 +236,7 @@ CR7BaseController::Result CR7PilzPlanner::testPilzPlanner(PilzPlanner planner_ty
             result = moveWithPilzPtp(target_pose);
             break;
         case PilzPlanner::CIRC:
-            geometry_msgs::msg::Pose intermediate_pose = current_pose;
+            
             result = moveWithPilzCirc(intermediate_pose, target_pose);
             break;
         default:
@@ -304,7 +305,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
     const geometry_msgs::msg::Pose& target_pose,
     const std::string& planner_id,
     const PilzConfig& config,
-    const geometry_msgs::msg::Pose& intermediate_pose = geometry_msgs::msg::Pose()) // 中间点，用于圆周运动
+    const geometry_msgs::msg::Pose& intermediate_pose) // 中间点，用于圆周运动
 {
     
     if (!move_group_)
@@ -323,8 +324,8 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         RCLCPP_INFO(logger_, "使用规划器: %s", planner_id.c_str());
         
         // 3. 设置规划参数
-        move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
-        move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
+        // move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
+        // move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
         
         // 4. 清除目标并设置新目标
         move_group_->clearPathConstraints(); // 清除约束条件
@@ -411,7 +412,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         
         // 9. 执行规划
         RCLCPP_INFO(logger_, "开始执行PILZ %s 运动...", planner_id.c_str());
-        auto start_time = node_->now();
+        start_time = node_->now();
         auto result = move_group_->execute(plan);
         double execution_time = (node_->now() - start_time).seconds();
         
