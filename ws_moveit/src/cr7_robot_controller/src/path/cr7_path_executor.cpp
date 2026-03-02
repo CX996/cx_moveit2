@@ -302,8 +302,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         // 创建特定的焊接路径点
         // 首先使用OMPL规划到起点
         auto start_wp = Waypoint("start_wp",
-                                  0.76735, 0.41487, 0.023809,
-                                  -0.37331, 0.8992, -0.084073, 0.21217);
+                                  0.42949, -0.78222, 0.013807,
+                                  0.43658, 0.88315, -0.075015, 0.15433);
         
         RCLCPP_INFO(logger_, "起点位置: [%.3f, %.3f, %.3f]", start_wp.x, start_wp.y, start_wp.z);
 
@@ -323,10 +323,12 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
         
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒，确保机器人稳定在起点位置
+
         // 然后使用PILZ规划到终点
         auto end_wp = Waypoint("end_wp", 
-                               0.76735, -0.41487, 0.023809,
-                               0.53928, 0.81723, 0.027122, 0.20142); 
+                               -0.42949, -0.78222, 0.013807,
+                               0.89741, 0.32358, -0.28258, 0.10047); 
 
         RCLCPP_INFO(logger_, "终点位置: [%.3f, %.3f, %.3f]", end_wp.x, end_wp.y, end_wp.z);
 
@@ -346,11 +348,12 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
 
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒，确保机器人稳定在起点位置
 
         // 然后使用OMPL规划回到中间点
         auto middle_wp = Waypoint("middle_wp", 
-                               0.48004, -0.14139, 0.52611,
-                               -2.7009e-05, 0.97805, -0.00056114, 0.20836); 
+                               0.14108, -0.47207, 0.24255,
+                               0.70697, 0.70719, 0.0061841, -0.00598); 
         
         RCLCPP_INFO(logger_, "中间点位置: [%.3f, %.3f, %.3f]", middle_wp.x, middle_wp.y, middle_wp.z);
 
@@ -370,10 +373,12 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
 
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒，确保机器人稳定在起点位置
+
         // 然后使用OMPL规划回到下一段焊缝起点
         auto start_wp_2 = Waypoint("start_wp_2",
-                                  0.76735, 0.41487, 0.023809,
-                                  -0.37331, 0.8992, -0.084073, 0.21217);         
+                                  0.42949, -0.78222, 0.013807,
+                                  0.43658, 0.88315, -0.075015, 0.15433);         
 
         RCLCPP_INFO(logger_, "下一段焊缝起点2位置: [%.3f, %.3f, %.3f]", start_wp_2.x, start_wp_2.y, start_wp_2.z);
 
@@ -393,10 +398,12 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }  
 
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒，确保机器人稳定在起点位置
+
         // 然后使用PILZ规划到终点
         auto end_wp_2 = Waypoint("stop_wp_2",
-                                  0.76735, 0.41487, 0.423809,
-                                  -0.37331, 0.8992, -0.084073, 0.21217);      
+                                  0.42037, -0.78516, 0.36689,
+                                  0.43162, 0.88552, -0.075865, 0.15428);      
                                     
         RCLCPP_INFO(logger_, "下一段焊缝终点2位置: [%.3f, %.3f, %.3f]", end_wp_2.x, end_wp_2.y, end_wp_2.z);
 
@@ -415,6 +422,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
             RCLCPP_ERROR(logger_, "PILZ规划器不可用");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒，确保机器人稳定在起点位置
 
         // 然后使用OMPL规划回到中间点
         if (ompl_planner_) 
