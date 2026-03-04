@@ -47,7 +47,7 @@ struct OMPLConfig {
         : planner_id("RRTConnectkConfigDefault"),  // RRTConnect更适合约束规划
           planning_time(30.0),  // 减少规划时间
           num_planning_attempts(1000),  // 减少尝试次数
-          velocity_scale(0.5),
+          velocity_scale(0.1),
           acceleration_scale(0.5),
           goal_position_tolerance(0.01),
           goal_orientation_tolerance(0.01)

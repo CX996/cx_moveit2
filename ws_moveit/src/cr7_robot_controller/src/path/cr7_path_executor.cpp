@@ -311,7 +311,7 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器规划到起点");
             // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
             // 规划到起点
             auto result = ompl_planner_->moveToPose(start_wp.toPose(), "start_wp");
             if (result != CR7BaseController::Result::SUCCESS) 
@@ -366,7 +366,7 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
             // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
             // 规划到中间点
             auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
             if (result != CR7BaseController::Result::SUCCESS) 
@@ -396,9 +396,10 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到下一段焊缝起点2");
             // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
             // 规划到下一段焊缝起点2
-            auto result = ompl_planner_->moveToPose(start_wp_2.toPose(), "start_wp_2");
+            // auto result = ompl_planner_->moveToPose(start_wp_2.toPose(), "start_wp_2");
+            auto result = pilz_planner_->moveWithPilzPtp(start_wp_2.toPose());
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到下一段焊缝起点失败");
@@ -417,8 +418,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
 
         // 然后使用PILZ规划到终点
         auto end_wp_2 = Waypoint("stop_wp_2",
-                                  0.42037, -0.78516, 0.36689,
-                                  0.43162, 0.88552, -0.075865, 0.15428);      
+                                  0.42949, -0.78222, 0.413807,
+                                  0.45462, 0.72786, -0.26828, 0.43768);      
                                     
         RCLCPP_INFO(logger_, "下一段焊缝终点2位置: [%.3f, %.3f, %.3f]", end_wp_2.x, end_wp_2.y, end_wp_2.z);
 
@@ -445,7 +446,86 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
             // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // 规划到中间点
+            auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "OMPL规划到中间点失败");
+                return result;
+            }
+            // 清除关节姿态约束
+            ompl_planner_->clearJointPoseConstraints();
+        } 
+        else 
+        {
+            RCLCPP_ERROR(logger_, "OMPL规划器不可用");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒，确保机器人稳定在起点位置
+
+        // 然后使用OMPL规划回到下一段焊缝起点
+        auto start_wp_3 = Waypoint("start_wp_3",
+                                  -0.42949, -0.78222, 0.013807,
+                                  0.89741, 0.32358, -0.28258, 0.10047);         
+
+        RCLCPP_INFO(logger_, "下一段焊缝起点3位置: [%.3f, %.3f, %.3f]", start_wp_3.x, start_wp_3.y, start_wp_3.z);
+
+        if (ompl_planner_) 
+        {
+            RCLCPP_INFO(logger_, "使用OMPL规划器回到下一段焊缝起点3");
+            // 设置关节姿态约束
+            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // 规划到下一段焊缝起点3
+            auto result = ompl_planner_->moveToPose(start_wp_3.toPose(), "start_wp_3");
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "OMPL规划到下一段焊缝起点失败");
+                return result;
+            }
+            // 清除关节姿态约束
+            ompl_planner_->clearJointPoseConstraints();
+        } 
+        else 
+        {
+            RCLCPP_ERROR(logger_, "OMPL规划器不可用");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }  
+
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒，确保机器人稳定在起点位置
+
+        // 然后使用PILZ规划到终点
+        auto end_wp_3 = Waypoint("end_wp_3",
+                                  -0.42949, -0.78222, 0.413807,
+                                  0.754, 0.28917, -0.55521, 0.19898);      
+                                    
+        RCLCPP_INFO(logger_, "下一段焊缝终点3位置: [%.3f, %.3f, %.3f]", end_wp_3.x, end_wp_3.y, end_wp_3.z);
+
+        if (pilz_planner_) 
+        {
+            RCLCPP_INFO(logger_, "使用PILZ规划器规划到下一段焊缝终点3");
+            auto result = pilz_planner_->moveWithPilzLin(end_wp_3.toPose());
+            if (result != CR7BaseController::Result::SUCCESS) 
+            {
+                RCLCPP_ERROR(logger_, "PILZ规划到下一段焊缝终点失败");
+                return result;
+            }
+        } 
+        else 
+        {
+            RCLCPP_ERROR(logger_, "PILZ规划器不可用");
+            return CR7BaseController::Result::ROBOT_NOT_READY;
+        }     
+
+       std::this_thread::sleep_for(std::chrono::seconds(1)); // 等待1秒，确保机器人稳定在起点位置
+
+        // 然后使用OMPL规划回到中间点
+        if (ompl_planner_) 
+        {
+            RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
+            // 设置关节姿态约束
+            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
             // 规划到中间点
             auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
             if (result != CR7BaseController::Result::SUCCESS) 

@@ -324,8 +324,8 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         RCLCPP_INFO(logger_, "使用规划器: %s", planner_id.c_str());
         
         // 3. 设置规划参数
-        // move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
-        // move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
+        move_group_->setMaxVelocityScalingFactor(config.velocity_scale);
+        move_group_->setMaxAccelerationScalingFactor(config.acceleration_scale);
         
         // 4. 清除目标并设置新目标
         move_group_->clearPathConstraints(); // 清除约束条件

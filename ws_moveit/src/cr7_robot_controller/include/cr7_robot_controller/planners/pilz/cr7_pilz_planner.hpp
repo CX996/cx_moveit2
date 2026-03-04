@@ -51,7 +51,7 @@ struct PilzConfig {
     PilzConfig() 
         : planner_type(PilzPlanner::LIN), 
           velocity_scale(0.1),
-          acceleration_scale(0.3),
+          acceleration_scale(0.5),
           blending_radius(0.1),
           max_deviation(0.001),     // 1mm偏差
           orientation_tolerance(0.001), // 约0.057度
