@@ -274,13 +274,68 @@ public:
     void clearJointPoseConstraints();
     
     /**
-     * @brief 尝试不同的关节姿态规划
+     * @brief 关节角度范围结构体
+     */
+    struct JointRange {
+        double min;  // 最小角度
+        double max;  // 最大角度
+        
+        JointRange(double min_val = -M_PI, double max_val = M_PI) 
+            : min(min_val), max(max_val) {}
+    };
+    
+    /**
+     * @brief 关节配置结构体
+     */
+    struct JointConfig {
+        JointRange joint_1;  // 肩部旋转
+        JointRange joint_2;  // 肩部俯仰
+        JointRange joint_3;  // 肘部
+        JointRange joint_4;  // 腕部旋转
+        JointRange joint_5;  // 腕部俯仰
+        JointRange joint_6;  // 腕部旋转
+        
+        // 默认构造函数，使用默认范围
+        JointConfig() = default;
+        
+        // 根据关节姿态类型创建配置
+        JointConfig(JointPoseType pose_type);
+    };
+    
+    /**
+     * @brief 通过IK解算多个关节配置并筛选规划
      * @param target_pose 目标位姿
      * @param waypoint_name 路点名称（用于日志）
      * @return CR7BaseController::Result 规划结果
      */
-    CR7BaseController::Result moveToPoseWithJointPoseVariations(
+    CR7BaseController::Result moveToPoseWithIKSolutions(
         const geometry_msgs::msg::Pose& target_pose,
+        const std::string& waypoint_name = ""
+    );
+    
+    /**
+     * @brief 通过IK解算多个关节配置并使用自定义关节范围筛选规划
+     * @param target_pose 目标位姿
+     * @param joint_config 关节配置范围
+     * @param waypoint_name 路点名称（用于日志）
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result moveToPoseWithIKSolutions(
+        const geometry_msgs::msg::Pose& target_pose,
+        const JointConfig& joint_config,
+        const std::string& waypoint_name = ""
+    );
+    
+    /**
+     * @brief 通过IK解算多个关节配置并使用关节姿态类型筛选规划
+     * @param target_pose 目标位姿
+     * @param pose_type 关节姿态类型
+     * @param waypoint_name 路点名称（用于日志）
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result moveToPoseWithIKSolutions(
+        const geometry_msgs::msg::Pose& target_pose,
+        JointPoseType pose_type,
         const std::string& waypoint_name = ""
     );
     

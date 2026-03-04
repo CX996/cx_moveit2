@@ -311,9 +311,14 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器规划到起点");
             // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
-            // 规划到起点
-            auto result = ompl_planner_->moveToPose(start_wp.toPose(), "start_wp");
+            // ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // // 规划到起点
+            // auto result = ompl_planner_->moveToPose(start_wp.toPose(), "start_wp");
+
+            // 使用IK解算多个关节配置并筛选规划
+            auto result = moveToPoseWithIKSolutions(start_wp.toPose(), CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL, "start_wp");
+
+
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到起点失败");
