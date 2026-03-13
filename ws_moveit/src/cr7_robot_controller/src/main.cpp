@@ -22,6 +22,8 @@
 #include <geometry_msgs/msg/quaternion.hpp>
 #include "cr7_robot_controller/cr7_robot_controller.hpp"
 
+#include "cr7_robot_controller/planningScene/obstacle_manager.hpp"
+
 using namespace cr7_controller;
 
 // 全局变量
@@ -82,6 +84,9 @@ int main(int argc, char* argv[])
         // ==================== 创建机器人控制器 ====================
         auto controller = std::make_shared<CR7RobotController>(node, "cr7_group");
 
+        // ====================创建障碍物管理器，使用默认配置，不自动添加障碍物 ====================
+        auto obstacle_manager = std::make_shared<ObstacleManager>(node, "dummy_link", false, ObstacleManager::ConfigType::DEFAULT);
+
         // ==================== 启动多线程执行器 ====================
         g_executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>(
             rclcpp::ExecutorOptions(), 4); // 使用4个线程
@@ -95,7 +100,8 @@ int main(int argc, char* argv[])
 
         // 初始化控制器
         RCLCPP_INFO(node->get_logger(), "初始化机器人控制器...");
-        if (!controller->initialize(init_timeout)) {
+        if (!controller->initialize(init_timeout)) 
+        {
             RCLCPP_FATAL(node->get_logger(), "初始化失败");
             return 1;
         }
@@ -104,6 +110,11 @@ int main(int argc, char* argv[])
 
         // 打印初始状态
         controller->printCurrentState();
+
+        // ==================== 添加默认障碍物（基础配置） ====================
+        RCLCPP_INFO(node->get_logger(), "2. 添加默认障碍物（基础配置）...");
+        obstacle_manager->addCollisionObjects();
+        std::this_thread::sleep_for(std::chrono::seconds(2));
 
         // ==================== 执行指定模式 ====================
         if (execute_mode == "test")

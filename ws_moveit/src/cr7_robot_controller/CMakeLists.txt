@@ -38,6 +38,9 @@ set(SHARED_SOURCE_FILES
   # 确保包含 utils 目录下的文件
   src/utils/pose_utils.cpp
   src/utils/trajectory_analyzer.cpp
+  # 确保包含 planningScene 目录下的文件
+  src/planningScene/obstacle_manager.cpp
+  src/planningScene/obstacle_manager_example.cpp
 )
 
 # 创建主可执行文件

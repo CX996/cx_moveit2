@@ -520,24 +520,44 @@ CR7OMPLPlanner::JointConfig::JointConfig(JointPoseType pose_type)
     }
 }
 
+/**
+ * @brief 对关节轨迹进行重采样
+ * 
+ * 该函数将输入的关节轨迹按照指定的时间间隔进行重采样，生成一个新的轨迹
+ * 重采样过程中使用线性插值计算中间点的关节位置
+ * 
+ * @param input_traj 输入的关节轨迹
+ * @param dt 采样时间间隔（秒）
+ * @return 重采样后的关节轨迹
+ */
 trajectory_msgs::msg::JointTrajectory CR7OMPLPlanner::resampleTrajectory(
     const trajectory_msgs::msg::JointTrajectory& input_traj,
     double dt)
 {
+    // 输出轨迹初始化
     trajectory_msgs::msg::JointTrajectory output_traj;
+    
+    // 如果输入轨迹点少于2个，直接返回原轨迹
     if (input_traj.points.size() < 2)
         return input_traj;
+    
+    // 复制关节名称
     output_traj.joint_names = input_traj.joint_names;
-    // 取总时间
+    
+    // 计算轨迹总时间
     const auto& last_pt = input_traj.points.back();
     double total_time =
         last_pt.time_from_start.sec +
         last_pt.time_from_start.nanosec * 1e-9;
-    double t = 0.0;
-    size_t seg = 0;
+    
+    // 初始化时间变量和段索引
+    double t = 0.0;  // 当前采样时间
+    size_t seg = 0;  // 当前轨迹段索引
+    
+    // 按照指定时间间隔进行重采样
     while (t <= total_time)
     {
-        // 找到当前时间属于哪个段
+        // 找到当前时间属于哪个轨迹段
         while (seg < input_traj.points.size() - 2)
         {
             double t_next =
@@ -547,30 +567,50 @@ trajectory_msgs::msg::JointTrajectory CR7OMPLPlanner::resampleTrajectory(
                 break;
             seg++;
         }
-        const auto& p0 = input_traj.points[seg];
-        const auto& p1 = input_traj.points[seg + 1];
+        
+        // 获取当前段的起始点和结束点
+        const auto& p0 = input_traj.points[seg];      // 段起始点
+        const auto& p1 = input_traj.points[seg + 1];  // 段结束点
+        
+        // 计算起始点和结束点的时间
         double t0 =
             p0.time_from_start.sec +
             p0.time_from_start.nanosec * 1e-9;
         double t1 =
             p1.time_from_start.sec +
             p1.time_from_start.nanosec * 1e-9;
+        
+        // 计算时间比例因子（用于线性插值）
         double ratio = (t - t0) / (t1 - t0);
+        // 确保比例因子在[0,1]范围内
         ratio = std::max(0.0, std::min(1.0, ratio));
+        
+        // 创建新的轨迹点
         trajectory_msgs::msg::JointTrajectoryPoint new_point;
         size_t joint_count = p0.positions.size();
         new_point.positions.resize(joint_count);
+        
+        // 对每个关节进行线性插值计算
         for (size_t j = 0; j < joint_count; j++)
         {
-            double q0 = p0.positions[j];
-            double q1 = p1.positions[j];
+            double q0 = p0.positions[j];  // 起始点关节位置
+            double q1 = p1.positions[j];  // 结束点关节位置
+            // 线性插值计算当前时间点的关节位置
             new_point.positions[j] = q0 + ratio * (q1 - q0);
         }
+        
+        // 设置新点的时间戳
         rclcpp::Duration dur = rclcpp::Duration::from_seconds(t);
         new_point.time_from_start = dur;
+        
+        // 将新点添加到输出轨迹
         output_traj.points.push_back(new_point);
+        
+        // 时间递增，准备下一个采样点
         t += dt;
     }
+    
+    // 返回重采样后的轨迹
     return output_traj;
 }
 
