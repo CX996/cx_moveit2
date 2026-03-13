@@ -46,9 +46,9 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig box1;
     box1.id = "box_1";
     box1.type.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box1.dimensions = {0.8, 0.01, 0.5};
-    box1.pose.position.x = 0.4;
-    box1.pose.position.y = 0.45;
+    box1.type.dimensions = {0.01, 0.8, 0.5};
+    box1.pose.position.x = 0.45;
+    box1.pose.position.y = 0.4;
     box1.pose.position.z = 0.25;
     box1.pose.orientation.w = 1.0;
     base_obstacles_.push_back(box1);
@@ -56,9 +56,9 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig box2;
     box2.id = "box_2";
     box2.type.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box2.dimensions = {0.8, 0.01, 0.5};
-    box2.pose.position.x = 0.4;
-    box2.pose.position.y = -0.45;
+    box2.type.dimensions = {0.01, 0.8, 0.5};
+    box2.pose.position.x = -0.45;
+    box2.pose.position.y = 0.4;
     box2.pose.position.z = 0.25;
     box2.pose.orientation.w = 1.0;
     base_obstacles_.push_back(box2);
@@ -66,9 +66,9 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig box3;
     box3.id = "box_3";
     box3.type.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box3.dimensions = {0.01, 0.9, 0.5};
-    box3.pose.position.x = 0.8;
-    box3.pose.position.y = 0.0;
+    box3.type.dimensions = {0.9, 0.01, 0.5};
+    box3.pose.position.x = 0.0;
+    box3.pose.position.y = 0.8;
     box3.pose.position.z = 0.25;
     box3.pose.orientation.w = 1.0;
     base_obstacles_.push_back(box3);
@@ -76,9 +76,9 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig box4;
     box4.id = "box_4";
     box4.type.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box4.dimensions = {1.0, 0.9, 0.01};
-    box4.pose.position.x = 0.3;
-    box4.pose.position.y = 0.0;
+    box4.type.dimensions = {0.9, 1.0, 0.01};
+    box4.pose.position.x = 0.0;
+    box4.pose.position.y = 0.3;
     box4.pose.position.z = -0.005;
     box4.pose.orientation.w = 1.0;
     base_obstacles_.push_back(box4);
@@ -89,7 +89,7 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig box5;
     box5.id = "box_5";
     box5.type.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box5.dimensions = {0.5, 0.01, 0.3};
+    box5.type.dimensions = {0.5, 0.01, 0.3};
     box5.pose.position.x = 0.1;
     box5.pose.position.y = 0.6;
     box5.pose.position.z = 0.15;
@@ -99,7 +99,7 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig box6;
     box6.id = "box_6";
     box6.type.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box6.dimensions = {0.5, 0.01, 0.3};
+    box6.type.dimensions = {0.5, 0.01, 0.3};
     box6.pose.position.x = 0.1;
     box6.pose.position.y = -0.6;
     box6.pose.position.z = 0.15;
@@ -109,7 +109,7 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig box7;
     box7.id = "box_7";
     box7.type.type = shape_msgs::msg::SolidPrimitive::BOX;
-    box7.dimensions = {0.01, 0.5, 0.3};
+    box7.type.dimensions = {0.01, 0.5, 0.3};
     box7.pose.position.x = 0.9;
     box7.pose.position.y = 0.0;
     box7.pose.position.z = 0.15;
@@ -120,7 +120,7 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig cylinder1;
     cylinder1.id = "test_cylinder_1";
     cylinder1.type.type = shape_msgs::msg::SolidPrimitive::CYLINDER;
-    cylinder1.dimensions = {0.1, 0.05}; // 高度, 半径
+    cylinder1.type.dimensions = {0.1, 0.05}; // 高度, 半径
     cylinder1.pose.position.x = 0.4;
     cylinder1.pose.position.y = 0.0;
     cylinder1.pose.position.z = 0.05;
@@ -130,7 +130,7 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig sphere1;
     sphere1.id = "test_sphere_1";
     sphere1.type.type = shape_msgs::msg::SolidPrimitive::SPHERE;
-    sphere1.dimensions = {0.08}; // 半径
+    sphere1.type.dimensions = {0.08}; // 半径
     sphere1.pose.position.x = 0.5;
     sphere1.pose.position.y = 0.3;
     sphere1.pose.position.z = 0.08;
@@ -140,7 +140,7 @@ void ObstacleManager::initializeObstacleConfigs() {
     ObstacleConfig small_box;
     small_box.id = "test_box_small";
     small_box.type.type = shape_msgs::msg::SolidPrimitive::BOX;
-    small_box.dimensions = {0.1, 0.1, 0.1};
+    small_box.type.dimensions = {0.1, 0.1, 0.1};
     small_box.pose.position.x = 0.5;
     small_box.pose.position.y = -0.3;
     small_box.pose.position.z = 0.05;
@@ -187,7 +187,7 @@ bool ObstacleManager::addCollisionObjects(const std::vector<ObstacleConfig>& con
         }
         
         // 添加碰撞物体到规划场景
-        planning_scene_interface_.addCollisionObjects(collision_objects);
+        planning_scene_interface_.applyCollisionObjects(collision_objects);
         
         RCLCPP_INFO(node_->get_logger(), "✅ 成功添加 %zu 个障碍物", collision_objects.size());
         return true;

@@ -1,41 +1,20 @@
 ======================================================================
 CR7机器人轨迹日志分析汇总报告
 ======================================================================
-生成时间: 2026-03-13 11:01:45
+生成时间: 2026-03-13 14:38:56
 
 
 【总体统计】
 ----------------------------------------------------------------------
-分析文件数量: 27
-总轨迹点数: 2044
-平均轨迹时间: 5.167 秒
+分析文件数量: 6
+总轨迹点数: 737
+平均轨迹时间: 4.731 秒
 
 【文件列表】
 ----------------------------------------------------------------------
-Ompl_trajectory_20260312_170309_detailed.txt: 54 点, 5.246 秒
-Ompl_trajectory_20260312_170329_detailed.txt: 38 点, 3.628 秒
-Ompl_trajectory_20260312_170337_detailed.txt: 44 点, 4.272 秒
-Ompl_trajectory_20260312_170350_detailed.txt: 83 点, 8.134 秒
-Ompl_trajectory_20260312_170403_detailed.txt: 57 点, 5.584 秒
-Ompl_trajectory_20260312_170416_detailed.txt: 36 点, 3.434 秒
-Ompl_trajectory_20260312_170640_detailed.txt: 56 点, 5.459 秒
-Ompl_trajectory_20260312_170701_detailed.txt: 38 点, 3.644 秒
-Ompl_trajectory_20260312_170710_detailed.txt: 47 点, 4.568 秒
-Ompl_trajectory_20260312_170723_detailed.txt: 76 点, 7.444 秒
-Ompl_trajectory_20260312_170735_detailed.txt: 56 点, 5.434 秒
-Ompl_trajectory_20260312_170748_detailed.txt: 27 点, 2.518 秒
-Ompl_trajectory_20260312_193456_detailed.txt: 150 点, 4.470 秒
-Ompl_trajectory_20260312_193519_detailed.txt: 127 点, 3.780 秒
-Ompl_trajectory_20260312_193531_detailed.txt: 154 点, 4.590 秒
-Ompl_trajectory_20260312_193544_detailed.txt: 211 点, 6.300 秒
-Ompl_trajectory_20260312_193555_detailed.txt: 123 点, 3.660 秒
-Ompl_trajectory_20260312_193606_detailed.txt: 118 点, 3.510 秒
-pilz_LIN_trajectory_20260312_170316_detailed.txt: 88 点, 8.674 秒
-pilz_LIN_trajectory_20260312_170343_detailed.txt: 53 点, 5.180 秒
-pilz_LIN_trajectory_20260312_170410_detailed.txt: 42 点, 4.089 秒
-pilz_LIN_trajectory_20260312_170648_detailed.txt: 88 点, 8.685 秒
-pilz_LIN_trajectory_20260312_170716_detailed.txt: 53 点, 5.170 秒
-pilz_LIN_trajectory_20260312_170742_detailed.txt: 42 点, 4.090 秒
-pilz_LIN_trajectory_20260312_193503_detailed.txt: 88 点, 8.675 秒
-pilz_LIN_trajectory_20260312_193537_detailed.txt: 53 点, 5.175 秒
-pilz_LIN_trajectory_20260312_193600_detailed.txt: 42 点, 4.085 秒
+Ompl_trajectory_20260313_143104_detailed.txt: 135 点, 4.020 秒
+pilz_LIN_trajectory_20260313_143109_detailed.txt: 42 点, 4.078 秒
+Ompl_trajectory_20260313_143052_detailed.txt: 238 点, 7.110 秒
+Ompl_trajectory_20260313_143039_detailed.txt: 167 点, 4.980 秒
+pilz_LIN_trajectory_20260313_143045_detailed.txt: 53 点, 5.167 秒
+Ompl_trajectory_20260313_143115_detailed.txt: 102 点, 3.030 秒

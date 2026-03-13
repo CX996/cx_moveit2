@@ -25,6 +25,7 @@
 #include "cr7_robot_controller/planningScene/obstacle_manager.hpp"
 
 using namespace cr7_controller;
+using namespace cr7_robot_controller;
 
 // 全局变量
 std::atomic<bool> g_running{true};
@@ -112,7 +113,7 @@ int main(int argc, char* argv[])
         controller->printCurrentState();
 
         // ==================== 添加默认障碍物（基础配置） ====================
-        RCLCPP_INFO(node->get_logger(), "2. 添加默认障碍物（基础配置）...");
+        RCLCPP_INFO(node->get_logger(), "添加默认障碍物（基础配置）...");
         obstacle_manager->addCollisionObjects();
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
@@ -141,6 +142,7 @@ int main(int argc, char* argv[])
         {
             RCLCPP_INFO(node->get_logger(), "执行焊接路径测试...");
             controller->executeWeldingTestPath();
+            obstacle_manager->removeAllObstacles(); // 测试完成后清理障碍物
         }
         else if (execute_mode == "ompl_constraint_test")
         {
