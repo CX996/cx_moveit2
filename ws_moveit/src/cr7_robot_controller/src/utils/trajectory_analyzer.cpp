@@ -135,7 +135,10 @@ void TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
         return;
     }
     
-    std::string filename = filename_prefix + "_detailed.txt";
+    // 定义日志文件保存路径
+    std::string log_path = "src/cr7_robot_controller/data/log/";  // 设置您的日志路径
+
+    std::string filename = log_path + filename_prefix + "_detailed.txt";
     std::ofstream file(filename);
     
     if (!file.is_open()) {
@@ -331,7 +334,7 @@ bool TrajectoryAnalyzer::isTrajectoryLinear(
         }
         else
         {
-            RCLCPP_INFO(logger, "轨迹点距离直线: %.6f m (在允许范围内)", distance);
+            // RCLCPP_INFO(logger, "轨迹点距离直线: %.6f m (在允许范围内)", distance);
         }
 
         if (iErrorCount > 10) // 如果错误点超过10个，认为轨迹不是直线

@@ -302,8 +302,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         // 创建特定的焊接路径点
         // 首先使用OMPL规划到起点
         auto start_wp = Waypoint("start_wp",
-                                  0.42949, -0.78222, 0.013807,
-                                  0.43658, 0.88315, -0.075015, 0.15433);
+                                  -0.42949, 0.78222, 0.013807,
+                                  0.80086, -0.5433, -0.18192, -0.17422);
         
         RCLCPP_INFO(logger_, "起点位置: [%.3f, %.3f, %.3f]", start_wp.x, start_wp.y, start_wp.z);
 
@@ -316,7 +316,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
             // auto result = ompl_planner_->moveToPose(start_wp.toPose(), "start_wp");
 
             // 使用IK解算多个关节配置并筛选规划
-            auto result = moveToPoseWithIKSolutions(start_wp.toPose(), CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL, "start_wp");
+            auto result = ompl_planner_->moveToPoseWithIKSolutions(start_wp.toPose(), 
+                    CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL, "start_wp");
 
 
             if (result != CR7BaseController::Result::SUCCESS) 
@@ -337,8 +338,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
 
         // 然后使用PILZ规划到终点
         auto end_wp = Waypoint("end_wp", 
-                               -0.42949, -0.78222, 0.013807,
-                               0.89741, 0.32358, -0.28258, 0.10047); 
+                               0.42949, 0.78222, 0.013807,
+                               -0.29261, 0.92525, 0.095331, 0.22183); 
 
         RCLCPP_INFO(logger_, "终点位置: [%.3f, %.3f, %.3f]", end_wp.x, end_wp.y, end_wp.z);
 
@@ -362,18 +363,24 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
 
         // 然后使用OMPL规划回到中间点
         auto middle_wp = Waypoint("middle_wp", 
-                               0.14108, -0.47207, 0.24255,
-                               0.70697, 0.70719, 0.0061841, -0.00598); 
+                               -0.14026, 0.70201, 0.13877,
+                               -0.69972, 0.71432, -0.00019336, -0.012156); 
         
         RCLCPP_INFO(logger_, "中间点位置: [%.3f, %.3f, %.3f]", middle_wp.x, middle_wp.y, middle_wp.z);
 
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
-            // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
-            // 规划到中间点
-            auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+
+            // // 设置关节姿态约束
+            // ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // // 规划到中间点
+            // auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+
+            // 使用IK解算多个关节配置并筛选规划
+            auto result = ompl_planner_->moveToPoseWithIKSolutions(middle_wp.toPose(), 
+                    CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL, "middle_wp");
+
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到中间点失败");
@@ -392,19 +399,24 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
 
         // 然后使用OMPL规划回到下一段焊缝起点
         auto start_wp_2 = Waypoint("start_wp_2",
-                                  0.42949, -0.78222, 0.013807,
-                                  0.43658, 0.88315, -0.075015, 0.15433);         
+                                  -0.42949, 0.78222, 0.013807,
+                                  0.80086, -0.5433, -0.18192, -0.17422);       
 
         RCLCPP_INFO(logger_, "下一段焊缝起点2位置: [%.3f, %.3f, %.3f]", start_wp_2.x, start_wp_2.y, start_wp_2.z);
 
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到下一段焊缝起点2");
+
             // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
             // 规划到下一段焊缝起点2
             // auto result = ompl_planner_->moveToPose(start_wp_2.toPose(), "start_wp_2");
-            auto result = pilz_planner_->moveWithPilzPtp(start_wp_2.toPose());
+            // auto result = pilz_planner_->moveWithPilzPtp(start_wp_2.toPose());
+
+            auto result = ompl_planner_->moveToPoseWithIKSolutions(start_wp_2.toPose(), 
+                    CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL, "start_wp_2");
+
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到下一段焊缝起点失败");
@@ -423,8 +435,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
 
         // 然后使用PILZ规划到终点
         auto end_wp_2 = Waypoint("stop_wp_2",
-                                  0.42949, -0.78222, 0.413807,
-                                  0.45462, 0.72786, -0.26828, 0.43768);      
+                                  -0.42949, 0.78222, 0.413807,
+                                  0.69881, -0.3986, -0.51574, -0.29463);      
                                     
         RCLCPP_INFO(logger_, "下一段焊缝终点2位置: [%.3f, %.3f, %.3f]", end_wp_2.x, end_wp_2.y, end_wp_2.z);
 
@@ -450,10 +462,14 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
-            // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
-            // 规划到中间点
-            auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+            // // 设置关节姿态约束
+            // ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // // 规划到中间点
+            // auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+
+            auto result = ompl_planner_->moveToPoseWithIKSolutions(middle_wp.toPose(), 
+            CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL, "middle_wp");
+
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到中间点失败");
@@ -472,18 +488,22 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
 
         // 然后使用OMPL规划回到下一段焊缝起点
         auto start_wp_3 = Waypoint("start_wp_3",
-                                  -0.42949, -0.78222, 0.013807,
-                                  0.89741, 0.32358, -0.28258, 0.10047);         
+                                  0.42949, 0.78222, 0.013807,
+                                  -0.29261, 0.92525, 0.095331, 0.22183);        
 
         RCLCPP_INFO(logger_, "下一段焊缝起点3位置: [%.3f, %.3f, %.3f]", start_wp_3.x, start_wp_3.y, start_wp_3.z);
 
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到下一段焊缝起点3");
-            // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
-            // 规划到下一段焊缝起点3
-            auto result = ompl_planner_->moveToPose(start_wp_3.toPose(), "start_wp_3");
+            // // 设置关节姿态约束
+            // ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // // 规划到下一段焊缝起点3
+            // auto result = ompl_planner_->moveToPose(start_wp_3.toPose(), "start_wp_3");
+
+            auto result = ompl_planner_->moveToPoseWithIKSolutions(start_wp_3.toPose(), 
+            CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL, "start_wp_3");
+
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到下一段焊缝起点失败");
@@ -502,8 +522,8 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
 
         // 然后使用PILZ规划到终点
         auto end_wp_3 = Waypoint("end_wp_3",
-                                  -0.42949, -0.78222, 0.413807,
-                                  0.754, 0.28917, -0.55521, 0.19898);      
+                                  0.42949, 0.78222, 0.413807,
+                                  -0.29261, 0.92525, 0.095331, 0.22183);      
                                     
         RCLCPP_INFO(logger_, "下一段焊缝终点3位置: [%.3f, %.3f, %.3f]", end_wp_3.x, end_wp_3.y, end_wp_3.z);
 
@@ -529,10 +549,14 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
         if (ompl_planner_) 
         {
             RCLCPP_INFO(logger_, "使用OMPL规划器回到中间点");
-            // 设置关节姿态约束
-            ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
-            // 规划到中间点
-            auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+            // // 设置关节姿态约束
+            // ompl_planner_->setJointPoseConstraint(CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL);
+            // // 规划到中间点
+            // auto result = ompl_planner_->moveToPose(middle_wp.toPose(), "middle_wp");
+
+            auto result = ompl_planner_->moveToPoseWithIKSolutions(middle_wp.toPose(), 
+            CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL, "middle_wp");
+
             if (result != CR7BaseController::Result::SUCCESS) 
             {
                 RCLCPP_ERROR(logger_, "OMPL规划到中间点失败");
@@ -540,6 +564,7 @@ CR7BaseController::Result CR7PathExecutor::executeWeldingTestPath()
             }
             // 清除关节姿态约束
             ompl_planner_->clearJointPoseConstraints();
+            return CR7BaseController::Result::SUCCESS;
         } 
         else 
         {

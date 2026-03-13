@@ -349,7 +349,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         
         // 6. 规划
         // 使用规划器自带的多次尝试功能
-        move_group_->setNumPlanningAttempts(20); // 设置最大尝试次数
+        move_group_->setNumPlanningAttempts(100); // 设置最大尝试次数
         
         moveit::planning_interface::MoveGroupInterface::Plan plan;
         auto start_time = node_->now();
@@ -402,7 +402,11 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         // 8. 保存轨迹分析
         if (planning_success) 
         {
-            std::string trajectory_prefix = "pilz_" + planner_id + "_trajectory";
+            auto now = std::chrono::system_clock::now();
+            auto time_t = std::chrono::system_clock::to_time_t(now);
+            std::stringstream ss;
+            ss << "pilz_" << planner_id << "_trajectory_" << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S");
+            std::string trajectory_prefix = ss.str();
             cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(plan.trajectory_, trajectory_prefix, logger_);
         }
         else 

@@ -40,13 +40,22 @@ def generate_launch_description():
             executable='cr7_controller',
             name='cr7_controller',
             output='screen',
-            parameters=[{
+            parameters=[
+            {
                 'interactive_mode': LaunchConfiguration('interactive_mode'),
                 'debug_mode': LaunchConfiguration('debug_mode'),
                 'test_mode': LaunchConfiguration('test_mode'),
                 'pilz_test': LaunchConfiguration('pilz_test'),
-                'use_sim_time': LaunchConfiguration('use_sim_time')
-            }],
+                'use_sim_time': LaunchConfiguration('use_sim_time')},
+                
+            # 运动学配置
+            {
+                'robot_description_kinematics.cr7_group.kinematics_solver': 'kdl_kinematics_plugin/KDLKinematicsPlugin',
+                'robot_description_kinematics.cr7_group.kinematics_solver_search_resolution': 0.005,
+                'robot_description_kinematics.cr7_group.kinematics_solver_timeout': 0.05,
+                'robot_description_kinematics.cr7_group.kinematics_solver_attempts': 3}
+            ],
+
             arguments=['--ros-args', '--log-level', 'info']
         )
     ])

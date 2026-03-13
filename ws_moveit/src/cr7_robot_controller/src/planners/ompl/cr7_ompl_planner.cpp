@@ -22,6 +22,9 @@
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <shape_msgs/msg/plane.hpp>
 
+#include <trajectory_msgs/msg/joint_trajectory.hpp>
+#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
+
 using namespace std::chrono_literals;
 
 namespace cr7_controller {
@@ -74,6 +77,7 @@ CR7OMPLPlanner::CR7OMPLPlanner(
     move_group_->setMaxAccelerationScalingFactor(config_.acceleration_scale);
     move_group_->setGoalPositionTolerance(config_.goal_position_tolerance);
     move_group_->setGoalOrientationTolerance(config_.goal_orientation_tolerance);
+    move_group_->setGoalJointTolerance(config_.goal_joint_tolerance);  // 设置较小的容差
     
     // 添加约束规划的特殊设置
     move_group_->setWorkspace(-2.0, -2.0, -2.0, 2.0, 2.0, 2.0);  // 设置更大的工作空间
@@ -184,7 +188,7 @@ void CR7OMPLPlanner::setJointPoseConstraint(JointPoseType pose_type)
             // joint_4 (腕部旋转): 正常姿态
             joint_constraint.joint_name = "joint4";
             joint_constraint.position = -M_PI/2;
-            joint_constraint.tolerance_above = M_PI/2;  // 0到π
+            joint_constraint.tolerance_above = M_PI/2;  // -π到0
             joint_constraint.tolerance_below = M_PI/2;
             joint_constraint.weight = 1.0;
             joint_constraints.push_back(joint_constraint);
@@ -436,85 +440,140 @@ CR7OMPLPlanner::JointConfig::JointConfig(JointPoseType pose_type)
     {
         case CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_NORMAL:
             // 肩部左、肘部上、腕部正常
-            joint_1 = JointRange(-M_PI, 0.0);         // 左侧范围
-            joint_2 = JointRange(-M_PI/2, 0.0);       // 肘部向上
-            joint_3 = JointRange(-M_PI, M_PI);        // 肘部默认范围
-            joint_4 = JointRange(-M_PI/2, M_PI/2);    // 腕部正常
-            joint_5 = JointRange(-M_PI, M_PI);        // 腕部俯仰默认范围
-            joint_6 = JointRange(-M_PI, M_PI);        // 腕部旋转默认范围
+            joint_1 = JointRange(-M_PI,  0.0);        // 左侧范围
+            joint_2 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_3 = JointRange( 0.0,  M_PI);        // 肘部向上
+            joint_4 = JointRange(-M_PI,  0.0);        // 腕部正常
+            joint_5 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_6 = JointRange(-M_PI, M_PI);        // 默认范围
             break;
             
         case CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_UP_WRIST_FLIPPED:
             // 肩部左、肘部上、腕部翻转
-            joint_1 = JointRange(-M_PI, 0.0);         // 左侧范围
-            joint_2 = JointRange(-M_PI/2, 0.0);       // 肘部向上
-            joint_3 = JointRange(-M_PI, M_PI);        // 肘部默认范围
-            joint_4 = JointRange(M_PI/2, M_PI);       // 腕部翻转
-            joint_5 = JointRange(-M_PI, M_PI);        // 腕部俯仰默认范围
-            joint_6 = JointRange(-M_PI, M_PI);        // 腕部旋转默认范围
+            joint_1 = JointRange(-M_PI,  0.0);         // 左侧范围
+            joint_2 = JointRange(-M_PI, M_PI);         // 默认范围
+            joint_3 = JointRange( 0.0,  M_PI);         // 肘部向上
+            joint_4 = JointRange( 0.0,  M_PI);         // 腕部翻转
+            joint_5 = JointRange(-M_PI, M_PI);         // 默认范围
+            joint_6 = JointRange(-M_PI, M_PI);         // 默认范围
             break;
             
         case CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_DOWN_WRIST_NORMAL:
             // 肩部左、肘部下、腕部正常
-            joint_1 = JointRange(-M_PI, 0.0);         // 左侧范围
-            joint_2 = JointRange(0.0, M_PI/2);        // 肘部下
-            joint_3 = JointRange(-M_PI, M_PI);        // 肘部默认范围
-            joint_4 = JointRange(-M_PI/2, M_PI/2);    // 腕部正常
-            joint_5 = JointRange(-M_PI, M_PI);        // 腕部俯仰默认范围
-            joint_6 = JointRange(-M_PI, M_PI);        // 腕部旋转默认范围
+            joint_1 = JointRange(-M_PI,  0.0);        // 左侧范围
+            joint_2 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_3 = JointRange(-M_PI,  0.0);        // 肘部下
+            joint_4 = JointRange(-M_PI,  0.0);        // 腕部正常
+            joint_5 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_6 = JointRange(-M_PI, M_PI);        // 默认范围
             break;
             
         case CR7OMPLPlanner::JointPoseType::SHOULDER_LEFT_ELBOW_DOWN_WRIST_FLIPPED:
             // 肩部左、肘部下、腕部翻转
-            joint_1 = JointRange(-M_PI, 0.0);         // 左侧范围
-            joint_2 = JointRange(0.0, M_PI/2);        // 肘部下
-            joint_3 = JointRange(-M_PI, M_PI);        // 肘部默认范围
-            joint_4 = JointRange(M_PI/2, M_PI);       // 腕部翻转
-            joint_5 = JointRange(-M_PI, M_PI);        // 腕部俯仰默认范围
-            joint_6 = JointRange(-M_PI, M_PI);        // 腕部旋转默认范围
+            joint_1 = JointRange(-M_PI,  0.0);         // 左侧范围
+            joint_2 = JointRange(-M_PI, M_PI);         // 默认范围
+            joint_3 = JointRange(-M_PI,  0.0);         // 肘部下
+            joint_4 = JointRange( 0.0,  M_PI);         // 腕部翻转
+            joint_5 = JointRange(-M_PI, M_PI);         // 默认范围
+            joint_6 = JointRange(-M_PI, M_PI);         // 默认范围
             break;
             
         case CR7OMPLPlanner::JointPoseType::SHOULDER_RIGHT_ELBOW_UP_WRIST_NORMAL:
             // 肩部右、肘部上、腕部正常
-            joint_1 = JointRange(0.0, M_PI);          // 右侧范围
-            joint_2 = JointRange(-M_PI/2, 0.0);       // 肘部向上
-            joint_3 = JointRange(-M_PI, M_PI);        // 肘部默认范围
-            joint_4 = JointRange(-M_PI/2, M_PI/2);    // 腕部正常
-            joint_5 = JointRange(-M_PI, M_PI);        // 腕部俯仰默认范围
-            joint_6 = JointRange(-M_PI, M_PI);        // 腕部旋转默认范围
+            joint_1 = JointRange( 0.0, M_PI);         // 右侧范围
+            joint_2 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_3 = JointRange(-M_PI,  0.0);        // 肘部向上
+            joint_4 = JointRange( 0.0,  M_PI);        // 腕部正常
+            joint_5 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_6 = JointRange(-M_PI, M_PI);        // 默认范围
             break;
             
         case CR7OMPLPlanner::JointPoseType::SHOULDER_RIGHT_ELBOW_UP_WRIST_FLIPPED:
             // 肩部右、肘部上、腕部翻转
-            joint_1 = JointRange(0.0, M_PI);          // 右侧范围
-            joint_2 = JointRange(-M_PI/2, 0.0);       // 肘部向上
-            joint_3 = JointRange(-M_PI, M_PI);        // 肘部默认范围
-            joint_4 = JointRange(M_PI/2, M_PI);       // 腕部翻转
-            joint_5 = JointRange(-M_PI, M_PI);        // 腕部俯仰默认范围
-            joint_6 = JointRange(-M_PI, M_PI);        // 腕部旋转默认范围
+            joint_1 = JointRange( 0.0,  M_PI);        // 右侧范围
+            joint_2 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_3 = JointRange(-M_PI,  0.0);        // 肘部向上
+            joint_4 = JointRange(-M_PI,  0.0);        // 腕部翻转
+            joint_5 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_6 = JointRange(-M_PI, M_PI);        // 默认范围
             break;
             
         case CR7OMPLPlanner::JointPoseType::SHOULDER_RIGHT_ELBOW_DOWN_WRIST_NORMAL:
             // 肩部右、肘部下、腕部正常
-            joint_1 = JointRange(0.0, M_PI);           // 右侧范围
-            joint_2 = JointRange(0.0, M_PI/2);         // 肘部下
-            joint_3 = JointRange(-M_PI, M_PI);         // 肘部默认范围
-            joint_4 = JointRange(-M_PI/2, M_PI/2);     // 腕部正常
-            joint_5 = JointRange(-M_PI, M_PI);         // 腕部俯仰默认范围
-            joint_6 = JointRange(-M_PI, M_PI);         // 腕部旋转默认范围
+            joint_1 = JointRange( 0.0,  M_PI);        // 右侧范围
+            joint_2 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_3 = JointRange( 0.0,  M_PI);        // 肘部下
+            joint_4 = JointRange( 0.0,  M_PI);        // 腕部正常
+            joint_5 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_6 = JointRange(-M_PI, M_PI);        // 默认范围
             break;
             
         case CR7OMPLPlanner::JointPoseType::SHOULDER_RIGHT_ELBOW_DOWN_WRIST_FLIPPED:
             // 肩部右、肘部下、腕部翻转
-            joint_1 = JointRange(0.0, M_PI);          // 右侧范围
-            joint_2 = JointRange(0.0, M_PI/2);        // 肘部下
-            joint_3 = JointRange(-M_PI, M_PI);        // 肘部默认范围
-            joint_4 = JointRange(M_PI/2, M_PI);       // 腕部翻转
-            joint_5 = JointRange(-M_PI, M_PI);        // 腕部俯仰默认范围
-            joint_6 = JointRange(-M_PI, M_PI);        // 腕部旋转默认范围
+            joint_1 = JointRange( 0.0,  M_PI);        // 右侧范围
+            joint_2 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_3 = JointRange( 0.0,  M_PI);        // 肘部下
+            joint_4 = JointRange(-M_PI,  0.0);        // 腕部翻转
+            joint_5 = JointRange(-M_PI, M_PI);        // 默认范围
+            joint_6 = JointRange(-M_PI, M_PI);        // 默认范围
             break;
     }
 }
+
+trajectory_msgs::msg::JointTrajectory CR7OMPLPlanner::resampleTrajectory(
+    const trajectory_msgs::msg::JointTrajectory& input_traj,
+    double dt)
+{
+    trajectory_msgs::msg::JointTrajectory output_traj;
+    if (input_traj.points.size() < 2)
+        return input_traj;
+    output_traj.joint_names = input_traj.joint_names;
+    // 取总时间
+    const auto& last_pt = input_traj.points.back();
+    double total_time =
+        last_pt.time_from_start.sec +
+        last_pt.time_from_start.nanosec * 1e-9;
+    double t = 0.0;
+    size_t seg = 0;
+    while (t <= total_time)
+    {
+        // 找到当前时间属于哪个段
+        while (seg < input_traj.points.size() - 2)
+        {
+            double t_next =
+                input_traj.points[seg + 1].time_from_start.sec +
+                input_traj.points[seg + 1].time_from_start.nanosec * 1e-9;
+            if (t <= t_next)
+                break;
+            seg++;
+        }
+        const auto& p0 = input_traj.points[seg];
+        const auto& p1 = input_traj.points[seg + 1];
+        double t0 =
+            p0.time_from_start.sec +
+            p0.time_from_start.nanosec * 1e-9;
+        double t1 =
+            p1.time_from_start.sec +
+            p1.time_from_start.nanosec * 1e-9;
+        double ratio = (t - t0) / (t1 - t0);
+        ratio = std::max(0.0, std::min(1.0, ratio));
+        trajectory_msgs::msg::JointTrajectoryPoint new_point;
+        size_t joint_count = p0.positions.size();
+        new_point.positions.resize(joint_count);
+        for (size_t j = 0; j < joint_count; j++)
+        {
+            double q0 = p0.positions[j];
+            double q1 = p1.positions[j];
+            new_point.positions[j] = q0 + ratio * (q1 - q0);
+        }
+        rclcpp::Duration dur = rclcpp::Duration::from_seconds(t);
+        new_point.time_from_start = dur;
+        output_traj.points.push_back(new_point);
+        t += dt;
+    }
+    return output_traj;
+}
+
 
 /**
  * @brief 通过IK解算多个关节配置并使用自定义关节范围筛选规划
@@ -538,21 +597,33 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
         moveit::core::RobotStatePtr state = move_group_->getCurrentState();
         const moveit::core::JointModelGroup* jmg = state->getJointModelGroup(move_group_->getName());
         
-        if (!jmg) {
+        if (!jmg) 
+        {
             RCLCPP_ERROR(logger_, "无法获取关节模型组");
             return CR7BaseController::Result::ROBOT_NOT_READY;
         }
         
+        // 检查运动学求解器
+        if (!jmg->getSolverInstance()) {
+            RCLCPP_ERROR(logger_, "运动学求解器未实例化，请配置运动学插件");
+            
+            // 尝试使用逆运动学替代方案
+            RCLCPP_INFO(logger_, "尝试使用数值逆运动学...");
+            // ... 使用其他IK方法或直接关节空间规划
+            return CR7BaseController::Result::PLANNING_FAILED;
+        }
+
         // 存储IK解算结果
         std::vector<std::vector<double>> solutions;
         
         // 尝试多次IK解算
-        int max_attempts = 50;
+        int max_attempts = 100;
         int success_count = 0;
         
         RCLCPP_INFO(logger_, "开始IK解算，最大尝试次数: %d", max_attempts);
         
-        for (int i = 0; i < max_attempts; ++i) {
+        for (int i = 0; i < max_attempts; ++i) 
+        {
             // 设置随机初始值
             state->setToRandomPositions(jmg);
             
@@ -563,14 +634,16 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
                 0.1  // 超时时间(秒)
             );
             
-            if (found) {
+            if (found) 
+            {
                 std::vector<double> q;
                 state->copyJointGroupPositions(jmg, q);
                 solutions.push_back(q);
                 success_count++;
                 
                 // 每找到10个解就打印一次
-                if (success_count % 10 == 0) {
+                if (success_count % 10 == 0) 
+                {
                     RCLCPP_INFO(logger_, "已找到 %d 个IK解", success_count);
                 }
             }
@@ -578,7 +651,8 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
         
         RCLCPP_INFO(logger_, "IK解算完成，共找到 %zu 个解", solutions.size());
         
-        if (solutions.empty()) {
+        if (solutions.empty()) 
+        {
             RCLCPP_ERROR(logger_, "未找到任何IK解");
             return CR7BaseController::Result::PLANNING_FAILED;
         }
@@ -586,57 +660,83 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
         // 筛选符合要求的关节配置
         std::vector<std::vector<double>> filtered_solutions;
         
-        for (const auto& solution : solutions) {
+        for (const auto& solution : solutions) 
+        {
             // 检查关节角度是否在合理范围内
             bool valid = true;
             
             // 假设关节顺序为: joint_1, joint_2, joint_3, joint_4, joint_5, joint_6
-            if (solution.size() >= 6) {
+            if (solution.size() >= 6) 
+            {
                 // joint_1 (肩部旋转)
-                if (solution[0] < joint_config.joint_1.min || solution[0] > joint_config.joint_1.max) {
+                if (solution[0] < joint_config.joint_1.min || solution[0] > joint_config.joint_1.max) 
+                {
                     valid = false;
                 }
                 // joint_2 (肩部俯仰)
-                else if (solution[1] < joint_config.joint_2.min || solution[1] > joint_config.joint_2.max) {
+                else if (solution[1] < joint_config.joint_2.min || solution[1] > joint_config.joint_2.max) 
+                {
                     valid = false;
                 }
                 // joint_3 (肘部)
-                else if (solution[2] < joint_config.joint_3.min || solution[2] > joint_config.joint_3.max) {
+                else if (solution[2] < joint_config.joint_3.min || solution[2] > joint_config.joint_3.max) 
+                {
                     valid = false;
                 }
                 // joint_4 (腕部旋转)
-                else if (solution[3] < joint_config.joint_4.min || solution[3] > joint_config.joint_4.max) {
+                else if (solution[3] < joint_config.joint_4.min || solution[3] > joint_config.joint_4.max) 
+                {
                     valid = false;
                 }
                 // joint_5 (腕部俯仰)
-                else if (solution[4] < joint_config.joint_5.min || solution[4] > joint_config.joint_5.max) {
+                else if (solution[4] < joint_config.joint_5.min || solution[4] > joint_config.joint_5.max) 
+                {
                     valid = false;
                 }
                 // joint_6 (腕部旋转)
-                else if (solution[5] < joint_config.joint_6.min || solution[5] > joint_config.joint_6.max) {
+                else if (solution[5] < joint_config.joint_6.min || solution[5] > joint_config.joint_6.max) 
+                {
                     valid = false;
                 }
             }
             
-            if (valid) {
+            if (valid) 
+            {
                 filtered_solutions.push_back(solution);
+                RCLCPP_INFO(logger_, "找到有效IK解: [%f, %f, %f, %f, %f, %f]", 
+                    solution[0], solution[1], solution[2], solution[3], solution[4], solution[5]);
             }
         }
         
         RCLCPP_INFO(logger_, "筛选后剩余 %zu 个有效IK解", filtered_solutions.size());
         
-        if (filtered_solutions.empty()) {
+        if (filtered_solutions.empty()) 
+        {
             RCLCPP_ERROR(logger_, "没有找到符合要求的IK解");
             return CR7BaseController::Result::PLANNING_FAILED;
         }
         
         // 尝试使用每个筛选后的IK解进行规划
-        for (size_t i = 0; i < filtered_solutions.size(); ++i) {
+        for (size_t i = 0; i < filtered_solutions.size(); ++i) 
+        {
             const auto& solution = filtered_solutions[i];
             
-            try {
+            try 
+            {
                 RCLCPP_INFO(logger_, "尝试第 %zu 个IK解进行规划", i + 1);
                 
+                // 清除之前的目标状态和约束
+                move_group_->clearPoseTargets();
+                move_group_->clearPathConstraints();
+
+                // 设置规划参数
+                move_group_->setPlanningPipelineId("ompl");
+                move_group_->setNumPlanningAttempts(config_.num_planning_attempts);  // 重置规划尝试次数
+                move_group_->setPlanningTime(config_.planning_time);  // 重置规划时间
+                move_group_->setPlannerId(config_.planner_id);  // 重置规划器
+                move_group_->setMaxVelocityScalingFactor(config_.velocity_scale);
+                move_group_->setMaxAccelerationScalingFactor(config_.acceleration_scale);
+
                 // 创建一个新的规划场景
                 moveit::planning_interface::MoveGroupInterface::Plan plan;
                 
@@ -645,9 +745,14 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
                 target_state->setJointGroupPositions(jmg, solution);
                 
                 // 设置目标位姿
+                // move_group_->setPoseTarget(target_pose);
+
+                // 设置关节目标
+                move_group_->setJointValueTarget(solution);
+
+                // 设置起始状态
                 move_group_->setStartStateToCurrentState();
-                move_group_->setPoseTarget(target_pose);
-                
+
                 // 规划
                 auto start_time = node_->now();
                 bool planning_success = static_cast<bool>(move_group_->plan(plan));
@@ -658,11 +763,32 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
                     RCLCPP_INFO(logger_, "✓ 规划成功 (耗时 %.3f 秒)", planning_time);
                     RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
                     
+                    // 检查规划结果是否匹配您的IK解
+                    if (planning_success) 
+                    {
+                        // 获取规划结果中的最后位置
+                        auto& last_point = plan.trajectory_.joint_trajectory.points.back();
+                        auto& positions = last_point.positions;
+                        
+                        RCLCPP_INFO(logger_, "规划结果终点:");
+                        for (size_t j = 0; j < positions.size(); ++j) 
+                        {
+                            RCLCPP_INFO(logger_, "关节%ld: 期望 %.6f, 实际 %.6f, 误差 %.6f", 
+                                    j+1, solution[j], positions[j], fabs(solution[j] - positions[j]));
+                        }
+
+                        auto& traj = plan.trajectory_.joint_trajectory;
+                        RCLCPP_INFO(logger_, "原始轨迹点数: %zu", traj.points.size());
+                        traj = resampleTrajectory(traj, 0.03);  // 每30ms一个点
+                        RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", traj.points.size());
+
+                    }
+
                     // 记录轨迹
                     auto now = std::chrono::system_clock::now();
                     auto time_t = std::chrono::system_clock::to_time_t(now);
                     std::stringstream ss;
-                    ss << "Ompl_trajectory_" << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S") << "_";
+                    ss << "Ompl_trajectory_" << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S");
                     std::string trajectory_prefix = ss.str();
                     cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(plan.trajectory_, trajectory_prefix, logger_);
 
@@ -672,16 +798,23 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
                     auto result = move_group_->execute(plan);
                     double execution_time = (node_->now() - start_time).seconds();
                     
-                    if (result == moveit::core::MoveItErrorCode::SUCCESS) {
+                    if (result == moveit::core::MoveItErrorCode::SUCCESS) 
+                    {
                         RCLCPP_INFO(logger_, "✓ 轨迹执行成功 (耗时 %.3f 秒)", execution_time);
                         return CR7BaseController::Result::SUCCESS;
-                    } else {
+                    } 
+                    else 
+                    {
                         RCLCPP_WARN(logger_, "轨迹执行失败 (错误码: %d)", result.val);
                     }
-                } else {
+                } 
+                else 
+                {
                     RCLCPP_WARN(logger_, "规划失败 (耗时 %.3f 秒)", planning_time);
                 }
-            } catch (const std::exception& e) {
+            } 
+            catch (const std::exception& e) 
+            {
                 RCLCPP_WARN(logger_, "规划异常: %s", e.what());
             }
         }

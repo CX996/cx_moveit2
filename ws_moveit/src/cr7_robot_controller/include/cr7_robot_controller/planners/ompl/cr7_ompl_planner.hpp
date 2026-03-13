@@ -29,6 +29,9 @@
 #include "cr7_robot_controller/base/cr7_base_controller.hpp"
 #include "cr7_robot_controller/utils/trajectory_analyzer.hpp"
 
+#include <trajectory_msgs/msg/joint_trajectory.hpp>
+#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
+
 namespace cr7_controller {
 
 /**
@@ -42,15 +45,17 @@ struct OMPLConfig {
     double acceleration_scale;       ///< 加速度缩放因子
     double goal_position_tolerance;  ///< 目标位置容差
     double goal_orientation_tolerance; ///< 目标姿态容差
+    double goal_joint_tolerance;     ///< 目标关节容差
 
     OMPLConfig() 
         : planner_id("RRTConnectkConfigDefault"),  // RRTConnect更适合约束规划
-          planning_time(30.0),  // 减少规划时间
-          num_planning_attempts(1000),  // 减少尝试次数
-          velocity_scale(0.1),
+          planning_time(10.0),  // 减少规划时间
+          num_planning_attempts(50),  // 减少尝试次数
+          velocity_scale(0.2),
           acceleration_scale(0.5),
-          goal_position_tolerance(0.01),
-          goal_orientation_tolerance(0.01)
+          goal_position_tolerance(0.001),
+          goal_orientation_tolerance(0.001),
+          goal_joint_tolerance(0.001)
     {
     }
 };
@@ -274,6 +279,16 @@ public:
     void clearJointPoseConstraints();
     
     /**
+     * @brief 尝试不同的关节姿态规划
+     * @param target_pose 目标位姿
+     * @param waypoint_name 路点名称（用于日志）
+     * @return CR7BaseController::Result 规划结果
+     */
+    CR7BaseController::Result moveToPoseWithJointPoseVariations(
+        const geometry_msgs::msg::Pose& target_pose,
+        const std::string& waypoint_name);
+
+    /**
      * @brief 关节角度范围结构体
      */
     struct JointRange {
@@ -302,6 +317,16 @@ public:
         JointConfig(JointPoseType pose_type);
     };
     
+    /**
+     * @brief 重采样轨迹，使得轨迹点之间的时间间隔更均匀
+     * @param input_traj 输入轨迹
+     * @param dt 时间间隔
+     * @return 重采样后的轨迹
+     */
+    trajectory_msgs::msg::JointTrajectory resampleTrajectory(
+        const trajectory_msgs::msg::JointTrajectory& input_traj,
+        double dt);
+
     /**
      * @brief 通过IK解算多个关节配置并筛选规划
      * @param target_pose 目标位姿
