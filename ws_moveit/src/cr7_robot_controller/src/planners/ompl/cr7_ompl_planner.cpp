@@ -561,7 +561,7 @@ static double toSec(const builtin_interfaces::msg::Duration& t)
  * @return 重采样后的关节轨迹
  */
 trajectory_msgs::msg::JointTrajectory
-resampleTrajectoryQuintic(
+CR7OMPLPlanner::resampleTrajectory(
     const trajectory_msgs::msg::JointTrajectory& input_traj,
     double dt)
 {
