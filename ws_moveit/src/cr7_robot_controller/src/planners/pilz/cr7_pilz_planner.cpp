@@ -356,13 +356,20 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         bool planning_success = static_cast<bool>(move_group_->plan(plan));
         double planning_time = (node_->now() - start_time).seconds();
         
-        if (planning_success && !plan.trajectory_.joint_trajectory.points.empty()) {
+        if (planning_success && !plan.trajectory_.joint_trajectory.points.empty()) 
+        {
             RCLCPP_INFO(logger_, "✓ PILZ %s 规划成功 (耗时 %.3f 秒)", 
                        planner_id.c_str(), planning_time);
             RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
             
-            // 验证LIN轨迹
-            if (planner_id == "LIN") {
+            // 重规划路径频率
+            plan.trajectory_ = cr7_controller::utils::TrajectoryAnalyzer::resampleTrajectory(
+                plan.trajectory_, 0.03);  // 每30ms一个点
+            RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
+
+            // 验证LIN轨迹是否直
+            if (planner_id == "LIN") 
+            {
                 bool is_linear = true;
                 const auto& points = plan.trajectory_.joint_trajectory.points;
                 if (points.size() > 2) 

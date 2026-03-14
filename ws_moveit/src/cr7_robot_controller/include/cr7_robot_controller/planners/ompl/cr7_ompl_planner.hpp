@@ -29,9 +29,6 @@
 #include "cr7_robot_controller/base/cr7_base_controller.hpp"
 #include "cr7_robot_controller/utils/trajectory_analyzer.hpp"
 
-#include <trajectory_msgs/msg/joint_trajectory.hpp>
-#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
-
 namespace cr7_controller {
 
 /**
@@ -317,16 +314,6 @@ public:
         JointConfig(JointPoseType pose_type);
     };
     
-    /**
-     * @brief 重采样轨迹，使得轨迹点之间的时间间隔更均匀
-     * @param input_traj 输入轨迹
-     * @param dt 时间间隔
-     * @return 重采样后的轨迹
-     */
-    trajectory_msgs::msg::JointTrajectory resampleTrajectory(
-        const trajectory_msgs::msg::JointTrajectory& input_traj,
-        double dt);
-
     /**
      * @brief 通过IK解算多个关节配置并筛选规划
      * @param target_pose 目标位姿

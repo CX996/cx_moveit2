@@ -18,6 +18,9 @@
 #include <moveit_msgs/msg/robot_trajectory.hpp>
 #include <geometry_msgs/msg/pose.hpp>
 
+#include <trajectory_msgs/msg/joint_trajectory.hpp>
+#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
+
 namespace cr7_controller {
 namespace utils {
 
@@ -88,6 +91,31 @@ public:
         double max_deviation,
         std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
         rclcpp::Logger logger);
+
+    /**
+     * @brief 使用五次多项式对关节轨迹进行重采样
+     * 
+     * 该函数使用五次多项式插值方法对输入轨迹进行重采样，生成指定时间步长的新轨迹。
+     * 五次多项式能够保证位置、速度和加速度的连续性，提供平滑的轨迹过渡。
+     * 
+     * 特性：
+     *  - 使用 Quintic Polynomial (五次多项式)
+     *  - 保证 C2 连续 (位置、速度、加速度连续)
+     *  - 保留原始轨迹的边界条件
+     *  - 生成固定时间步长轨迹
+     * 
+     * 适用于：
+     *  - 工业机器人控制
+     *  - ServoJ streaming
+     *  - 轨迹控制周期匹配
+     * 
+     * @param input_traj 输入的关节轨迹
+     * @param dt 重采样的时间步长（秒）
+     * @return 重采样后的关节轨迹
+     */
+    static trajectory_msgs::msg::JointTrajectory resampleTrajectory(
+        const trajectory_msgs::msg::JointTrajectory& input_traj,
+        double dt);
 };
 
 } // namespace utils

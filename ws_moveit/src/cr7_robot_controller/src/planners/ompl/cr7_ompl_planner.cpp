@@ -22,9 +22,6 @@
 #include <shape_msgs/msg/solid_primitive.hpp>
 #include <shape_msgs/msg/plane.hpp>
 
-#include <trajectory_msgs/msg/joint_trajectory.hpp>
-#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
-
 using namespace std::chrono_literals;
 
 namespace cr7_controller {
@@ -521,178 +518,6 @@ CR7OMPLPlanner::JointConfig::JointConfig(JointPoseType pose_type)
 }
 
 /**
- * @brief 将时间转换为 double 秒
- */
-static double toSec(const builtin_interfaces::msg::Duration& t)
-{
-    return static_cast<double>(t.sec) +
-           static_cast<double>(t.nanosec) * 1e-9;
-}
-
-/**
- * @brief 五次多项式插值器
- *
- * 该函数对 MoveIt 输出的 JointTrajectory 进行时间重采样。
- *
- * 特性：
- *  - 使用 Quintic Polynomial (五次多项式)
- *  - 保证 C2 连续 (位置、速度、加速度连续)
- *  - 保留原始轨迹的边界条件
- *  - 生成固定时间步长轨迹
- *
- * 适用于：
- *  - 工业机器人控制
- *  - ServoJ streaming
- *  - 轨迹控制周期匹配
- *
- * @param input_traj  原始轨迹 (MoveIt 输出)
- * @param dt          采样周期 (例如 0.03s = 33Hz)
- *
- * @return trajectory_msgs::msg::JointTrajectory
- */
-/**
- * @brief 使用五次多项式对关节轨迹进行重采样
- * 
- * 该函数使用五次多项式插值方法对输入轨迹进行重采样，生成指定时间步长的新轨迹。
- * 五次多项式能够保证位置、速度和加速度的连续性，提供平滑的轨迹过渡。
- * 
- * @param input_traj 输入的关节轨迹
- * @param dt 重采样的时间步长（秒）
- * @return 重采样后的关节轨迹
- */
-trajectory_msgs::msg::JointTrajectory
-CR7OMPLPlanner::resampleTrajectory(
-    const trajectory_msgs::msg::JointTrajectory& input_traj,
-    double dt)
-{
-    trajectory_msgs::msg::JointTrajectory output;
-
-    // 处理边界情况：轨迹点少于2个时直接返回原轨迹
-    if (input_traj.points.size() < 2)
-        return input_traj;
-
-    // 复制关节名称信息
-    output.joint_names = input_traj.joint_names;
-
-    // 计算轨迹总时间
-    double total_time = toSec(input_traj.points.back().time_from_start);
-
-    // 当前轨迹段索引
-    size_t segment = 0;
-
-    // 按指定时间步长逐点采样
-    for (double t = 0.0; t < total_time; t += dt)
-    {
-        // 找到当前时间所在的轨迹段
-        // 注意：使用 input_traj.points.size() - 2 作为上界，确保 segment + 1 不会越界
-        while (segment < input_traj.points.size() - 2 &&
-               t > toSec(input_traj.points[segment + 1].time_from_start))
-        {
-            segment++;
-        }
-
-        // 获取当前轨迹段的起点和终点
-        const auto& p0 = input_traj.points[segment];
-        const auto& p1 = input_traj.points[segment + 1];
-
-        // 计算当前轨迹段的时间信息
-        double t0 = toSec(p0.time_from_start);  // 轨迹段起始时间
-        double t1 = toSec(p1.time_from_start);  // 轨迹段结束时间
-        double T = t1 - t0;                     // 轨迹段持续时间
-        double tau = t - t0;                    // 当前时间在轨迹段内的相对时间
-
-        // 创建新的轨迹点
-        trajectory_msgs::msg::JointTrajectoryPoint new_point;
-
-        // 获取自由度数量
-        size_t dof = p0.positions.size();
-
-        // 为新轨迹点分配空间
-        new_point.positions.resize(dof);
-        new_point.velocities.resize(dof);
-        new_point.accelerations.resize(dof);
-
-        // 对每个关节进行五次多项式插值
-        for (size_t j = 0; j < dof; j++)
-        {
-            // 提取边界条件
-            double q0 = p0.positions[j];          // 起始位置
-            double q1 = p1.positions[j];          // 结束位置
-            double v0 = p0.velocities.empty() ? 0.0 : p0.velocities[j];  // 起始速度
-            double v1 = p1.velocities.empty() ? 0.0 : p1.velocities[j];  // 结束速度
-            double a0 = p0.accelerations.empty() ? 0.0 : p0.accelerations[j];  // 起始加速度
-            double a1 = p1.accelerations.empty() ? 0.0 : p1.accelerations[j];  // 结束加速度
-
-            // 计算五次多项式系数
-            double c0 = q0;                          // 常数项
-            double c1 = v0;                          // 一次项系数
-            double c2 = a0 / 2.0;                    // 二次项系数
-
-            // 预计算时间相关的幂次
-            double T2 = T*T;
-            double T3 = T2*T;
-            double T4 = T3*T;
-            double T5 = T4*T;
-
-            // 计算三次项系数
-            double c3 =
-                (20*(q1-q0) - (8*v1+12*v0)*T - (3*a0-a1)*T2) / (2*T3);
-
-            // 计算四次项系数
-            double c4 =
-                (30*(q0-q1) + (14*v1+16*v0)*T + (3*a0-2*a1)*T2) / (2*T4);
-
-            // 计算五次项系数
-            double c5 =
-                (12*(q1-q0) - (6*v1+6*v0)*T - (a0-a1)*T2) / (2*T5);
-
-            // 预计算相对时间的幂次
-            double tau2 = tau*tau;
-            double tau3 = tau2*tau;
-            double tau4 = tau3*tau;
-            double tau5 = tau4*tau;
-
-            // 计算当前时间点的位置
-            new_point.positions[j] =
-                c0 +
-                c1*tau +
-                c2*tau2 +
-                c3*tau3 +
-                c4*tau4 +
-                c5*tau5;
-
-            // 计算当前时间点的速度（位置对时间的一阶导数）
-            new_point.velocities[j] =
-                c1 +
-                2*c2*tau +
-                3*c3*tau2 +
-                4*c4*tau3 +
-                5*c5*tau4;
-
-            // 计算当前时间点的加速度（位置对时间的二阶导数）
-            new_point.accelerations[j] =
-                2*c2 +
-                6*c3*tau +
-                12*c4*tau2 +
-                20*c5*tau3;
-        }
-
-        // 设置新轨迹点的时间戳
-        new_point.time_from_start =
-            rclcpp::Duration::from_seconds(t);
-
-        // 将新轨迹点添加到输出轨迹中
-        output.points.push_back(new_point);
-    }
-
-    // 确保输出轨迹的终点与输入轨迹完全一致
-    // 这是为了避免由于浮点数计算误差导致的终点偏差
-    output.points.push_back(input_traj.points.back());
-
-    return output;
-}
-
-/**
  * @brief 通过IK解算多个关节配置并使用自定义关节范围筛选规划
  * @param target_pose 目标位姿
  * @param joint_config 关节配置范围
@@ -896,7 +721,7 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
 
                         auto& traj = plan.trajectory_.joint_trajectory;
                         RCLCPP_INFO(logger_, "原始轨迹点数: %zu", traj.points.size());
-                        // traj = resampleTrajectory(traj, 0.03);  // 每30ms一个点
+                        traj = cr7_controller::utils::TrajectoryAnalyzer::resampleTrajectory(traj, 0.03);  // 每30ms一个点
                         RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", traj.points.size());
 
                     }
