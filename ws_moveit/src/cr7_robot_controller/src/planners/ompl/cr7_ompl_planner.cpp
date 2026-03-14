@@ -12,7 +12,8 @@
 
 #include "cr7_robot_controller/planners/ompl/cr7_ompl_planner.hpp"
 #include "cr7_robot_controller/utils/pose_utils.hpp"
-#include "cr7_robot_controller/utils/trajectory_analyzer.hpp"
+
+#include "cr7_robot_controller/utils/trajectory_replanner.hpp"
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -721,7 +722,7 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
 
                         auto& traj = plan.trajectory_.joint_trajectory;
                         RCLCPP_INFO(logger_, "原始轨迹点数: %zu", traj.points.size());
-                        traj = cr7_controller::utils::TrajectoryAnalyzer::resampleTrajectory(traj, 0.03);  // 每30ms一个点
+                        traj = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(traj, 0.03);  // 每30ms一个点
                         RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", traj.points.size());
 
                     }

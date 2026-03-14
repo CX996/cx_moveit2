@@ -363,8 +363,8 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
             RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
             
             // 重规划路径频率
-            plan.trajectory_ = cr7_controller::utils::TrajectoryAnalyzer::resampleTrajectory(
-                plan.trajectory_, 0.03);  // 每30ms一个点
+            plan.trajectory_.joint_trajectory = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(
+                plan.trajectory_.joint_trajectory, 0.03);  // 每30ms一个点
             RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
 
             // 验证LIN轨迹是否直
