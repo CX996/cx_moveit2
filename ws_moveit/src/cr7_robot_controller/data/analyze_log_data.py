@@ -167,7 +167,9 @@ class LogDataAnalyzer:
                         'time': 0.0,
                         'positions': [],
                         'velocities': [],
-                        'accelerations': []
+                        'accelerations': [],
+                        'cartesian_position': [],
+                        'cartesian_orientation': []
                     }
                 elif "时间:" in line:
                     current_point['time'] = float(line.split(":")[1].strip().split()[0])
@@ -183,6 +185,16 @@ class LogDataAnalyzer:
                     acc_str = line.split(":")[1].strip()
                     accelerations = list(map(float, acc_str.strip('[]').split(', ')))
                     current_point['accelerations'] = accelerations
+                elif "笛卡尔位置:" in line:
+                    cart_pos_str = line.split(":")[1].strip()
+                    if cart_pos_str != "无法计算":
+                        cart_positions = list(map(float, cart_pos_str.strip('[]').split(', ')))
+                        current_point['cartesian_position'] = cart_positions
+                elif "笛卡尔姿态:" in line:
+                    cart_orient_str = line.split(":")[1].strip()
+                    if cart_orient_str != "无法计算":
+                        cart_orientations = list(map(float, cart_orient_str.strip('[]').split(', ')))
+                        current_point['cartesian_orientation'] = cart_orientations
             
             # 添加最后一个点
             if current_point:
@@ -312,10 +324,10 @@ class LogDataAnalyzer:
             print(f"\n生成 {file_name} 的分析图表")
             
             # 创建图表
-            fig = plt.figure(figsize=(18, 12))
+            fig = plt.figure(figsize=(20, 15))
             
             # 1. 时间序列分析
-            ax1 = fig.add_subplot(2, 3, 1)
+            ax1 = fig.add_subplot(3, 3, 1)
             times = [point['time'] for point in data['trajectory_points']]
             time_diffs = np.diff(times)
             ax1.plot(times[1:], time_diffs, 'b-', linewidth=1.5, alpha=0.7)
@@ -327,9 +339,9 @@ class LogDataAnalyzer:
             ax1.grid(True, alpha=0.3)
             ax1.legend()
             
-            # 2. 关节位置分析
-            ax2 = fig.add_subplot(2, 3, 2)
-            for i, joint_name in enumerate(data['joint_names'][:3]):  # 只显示前3个关节
+            # 2. 关节位置分析（全部6个关节）
+            ax2 = fig.add_subplot(3, 3, 2)
+            for i, joint_name in enumerate(data['joint_names']):  # 显示全部关节
                 positions = []
                 for point in data['trajectory_points']:
                     if i < len(point['positions']):
@@ -342,9 +354,9 @@ class LogDataAnalyzer:
             ax2.grid(True, alpha=0.3)
             ax2.legend()
             
-            # 3. 关节速度分析
-            ax3 = fig.add_subplot(2, 3, 3)
-            for i, joint_name in enumerate(data['joint_names'][:3]):
+            # 3. 关节速度分析（全部6个关节）
+            ax3 = fig.add_subplot(3, 3, 3)
+            for i, joint_name in enumerate(data['joint_names']):
                 velocities = []
                 for point in data['trajectory_points']:
                     if i < len(point['velocities']):
@@ -357,9 +369,9 @@ class LogDataAnalyzer:
             ax3.grid(True, alpha=0.3)
             ax3.legend()
             
-            # 4. 关节加速度分析
-            ax4 = fig.add_subplot(2, 3, 4)
-            for i, joint_name in enumerate(data['joint_names'][:3]):
+            # 4. 关节加速度分析（全部6个关节）
+            ax4 = fig.add_subplot(3, 3, 4)
+            for i, joint_name in enumerate(data['joint_names']):
                 accelerations = []
                 for point in data['trajectory_points']:
                     if i < len(point['accelerations']):
@@ -372,34 +384,76 @@ class LogDataAnalyzer:
             ax4.grid(True, alpha=0.3)
             ax4.legend()
             
-            # 5. 速度分布直方图
-            ax5 = fig.add_subplot(2, 3, 5)
+            # 5. 笛卡尔位置轨迹（3D）
+            ax5 = fig.add_subplot(3, 3, 5, projection='3d')
+            cart_positions = []
+            for point in data['trajectory_points']:
+                if 'cartesian_position' in point and point['cartesian_position']:
+                    cart_positions.append(point['cartesian_position'])
+            if cart_positions:
+                cart_positions = np.array(cart_positions)
+                ax5.plot(cart_positions[:, 0], cart_positions[:, 1], cart_positions[:, 2], 
+                         'b-', linewidth=1.5, alpha=0.8)
+                ax5.scatter(cart_positions[0, 0], cart_positions[0, 1], cart_positions[0, 2], 
+                           color='g', s=100, label='起点')
+                ax5.scatter(cart_positions[-1, 0], cart_positions[-1, 1], cart_positions[-1, 2], 
+                           color='r', s=100, label='终点')
+                ax5.set_xlabel('X (m)')
+                ax5.set_ylabel('Y (m)')
+                ax5.set_zlabel('Z (m)')
+                ax5.set_title('笛卡尔空间轨迹')
+                ax5.grid(True, alpha=0.3)
+                ax5.legend()
+            else:
+                ax5.text(0.5, 0.5, 0.5, '无笛卡尔数据', ha='center', va='center')
+            
+            # 6. 笛卡尔位置随时间变化
+            ax6 = fig.add_subplot(3, 3, 6)
+            if cart_positions.size > 0:
+                ax6.plot(times, cart_positions[:, 0], label='X', linewidth=1.5, alpha=0.8)
+                ax6.plot(times, cart_positions[:, 1], label='Y', linewidth=1.5, alpha=0.8)
+                ax6.plot(times, cart_positions[:, 2], label='Z', linewidth=1.5, alpha=0.8)
+                ax6.set_xlabel('时间 (s)')
+                ax6.set_ylabel('笛卡尔位置 (m)')
+                ax6.set_title('笛卡尔位置随时间变化')
+                ax6.grid(True, alpha=0.3)
+                ax6.legend()
+            else:
+                ax6.text(0.5, 0.5, '无笛卡尔数据', ha='center', va='center')
+                ax6.axis('off')
+            
+            # 7. 速度分布直方图
+            ax7 = fig.add_subplot(3, 3, 7)
             all_velocities = []
             for i in range(len(data['joint_names'])):
                 for point in data['trajectory_points']:
                     if i < len(point['velocities']):
                         all_velocities.append(abs(point['velocities'][i]))
             if all_velocities:
-                ax5.hist(all_velocities, bins=30, alpha=0.7, edgecolor='black')
-                ax5.axvline(x=np.mean(all_velocities), color='r', linestyle='--', 
+                ax7.hist(all_velocities, bins=30, alpha=0.7, edgecolor='black')
+                ax7.axvline(x=np.mean(all_velocities), color='r', linestyle='--', 
                            label=f'平均: {np.mean(all_velocities):.4f}')
-                ax5.set_xlabel('速度绝对值 (rad/s)')
-                ax5.set_ylabel('频数')
-                ax5.set_title('速度分布')
-                ax5.grid(True, alpha=0.3)
-                ax5.legend()
+                ax7.set_xlabel('速度绝对值 (rad/s)')
+                ax7.set_ylabel('频数')
+                ax7.set_title('速度分布')
+                ax7.grid(True, alpha=0.3)
+                ax7.legend()
             else:
-                ax5.text(0.5, 0.5, '无速度数据', ha='center', va='center')
-                ax5.axis('off')
+                ax7.text(0.5, 0.5, '无速度数据', ha='center', va='center')
+                ax7.axis('off')
             
-            # 6. 轨迹点密度分析
-            ax6 = fig.add_subplot(2, 3, 6)
+            # 8. 轨迹点密度分析
+            ax8 = fig.add_subplot(3, 3, 8)
             time_intervals = np.diff(times)
-            ax6.plot(times[1:], 1.0 / time_intervals, 'b-', linewidth=1.5, alpha=0.7)
-            ax6.set_xlabel('时间 (s)')
-            ax6.set_ylabel('点密度 (1/s)')
-            ax6.set_title('轨迹点密度')
-            ax6.grid(True, alpha=0.3)
+            ax8.plot(times[1:], 1.0 / time_intervals, 'b-', linewidth=1.5, alpha=0.7)
+            ax8.set_xlabel('时间 (s)')
+            ax8.set_ylabel('点密度 (1/s)')
+            ax8.set_title('轨迹点密度')
+            ax8.grid(True, alpha=0.3)
+            
+            # 9. 空白占位
+            ax9 = fig.add_subplot(3, 3, 9)
+            ax9.axis('off')
             
             plt.suptitle(f'{file_name} 轨迹分析', fontsize=16, fontweight='bold')
             plt.tight_layout()

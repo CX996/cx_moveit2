@@ -64,11 +64,13 @@ public:
      * @brief 保存详细轨迹分析
      * @param trajectory 机器人轨迹
      * @param filename_prefix 文件名前缀
+     * @param move_group MoveGroup接口指针（用于计算笛卡尔坐标）
      * @param logger ROS logger
      */
     static void saveDetailedTrajectoryAnalysis(
         const moveit_msgs::msg::RobotTrajectory& trajectory,
         const std::string& filename_prefix,
+        std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
         rclcpp::Logger logger);
     
     /**

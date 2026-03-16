@@ -733,7 +733,7 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
                     std::stringstream ss;
                     ss << "Ompl_trajectory_" << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S");
                     std::string trajectory_prefix = ss.str();
-                    cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(plan.trajectory_, trajectory_prefix, logger_);
+                    cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(plan.trajectory_, trajectory_prefix, move_group_, logger_);
 
                     // 执行规划
                     RCLCPP_INFO(logger_, "开始执行轨迹...");

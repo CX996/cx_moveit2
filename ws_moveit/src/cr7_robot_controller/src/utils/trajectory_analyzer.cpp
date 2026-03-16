@@ -128,6 +128,7 @@ void TrajectoryAnalyzer::printTrajectoryInfo(
 void TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
     const moveit_msgs::msg::RobotTrajectory& trajectory,
     const std::string& filename_prefix,
+    std::shared_ptr<moveit::planning_interface::MoveGroupInterface> move_group,
     rclcpp::Logger logger) 
 {
     
@@ -205,6 +206,42 @@ void TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
                 }
             }
             file << "]" << std::endl;
+        }
+        
+        // 计算并记录笛卡尔坐标位置
+        if (move_group) {
+            try {
+                // 设置关节位置
+                std::vector<double> joint_values = point.positions;
+                move_group->setJointValueTarget(joint_values);
+                
+                // 计算正向运动学
+                moveit::core::RobotStatePtr kinematic_state = move_group->getCurrentState();
+                kinematic_state->setJointGroupPositions(move_group->getName(), joint_values);
+                
+                // 获取末端执行器位姿
+                const std::string& end_effector_link = move_group->getEndEffectorLink();
+                Eigen::Isometry3d transform = kinematic_state->getGlobalLinkTransform(end_effector_link);
+                
+                // 从 Eigen::Isometry3d 转换到 geometry_msgs::msg::Pose
+                double x = transform.translation().x();
+                double y = transform.translation().y();
+                double z = transform.translation().z();
+                
+                Eigen::Quaterniond q(transform.rotation());
+                double qx = q.x();
+                double qy = q.y();
+                double qz = q.z();
+                double qw = q.w();
+                
+                file << "  笛卡尔位置: [" << std::fixed << std::setprecision(6)
+                     << x << ", " << y << ", " << z << "]" << std::endl;
+                file << "  笛卡尔姿态: [" << std::fixed << std::setprecision(6)
+                     << qx << ", " << qy << ", " << qz << ", " << qw << "]" << std::endl;
+            } catch (...) {
+                // 跳过无法计算的点
+                file << "  笛卡尔位置: 无法计算" << std::endl;
+            }
         }
         
         file << std::endl;
