@@ -135,6 +135,14 @@ public:
         double t);
 
     /**
+     * @brief 在s参数上对轨迹点进行插值
+     */
+    static trajectory_msgs::msg::JointTrajectoryPoint interpolateTrajectoryPoint(
+        const trajectory_msgs::msg::JointTrajectory& traj,
+        const std::vector<double>& s_values,
+        double s);
+
+    /**
      * @brief 在新的时间点上采样轨迹
      * @param input_traj 输入轨迹
      * @param new_times 新时间序列

@@ -2,8 +2,12 @@
 #include <cmath>
 
 #include <rclcpp/rclcpp.hpp>
-#include <trajectory_msgs/msg/joint_trajectory.hpp>
+
 #include <builtin_interfaces/msg/duration.hpp>
+
+#include <trajectory_msgs/msg/joint_trajectory.hpp>
+#include <trajectory_msgs/msg/joint_trajectory_point.hpp>
+
 
 #include "cr7_robot_controller/utils/trajectory_replanner.hpp"
 

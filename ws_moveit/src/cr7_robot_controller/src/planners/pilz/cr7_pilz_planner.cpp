@@ -5,8 +5,7 @@
  * 实现CR7PilzPlanner类的所有方法
  */
 
-#include "cr7_robot_controller/planners/pilz/cr7_pilz_planner.hpp"
-#include "cr7_robot_controller/utils/trajectory_analyzer.hpp"
+
 #include <cmath>
 #include <chrono>
 #include <sstream>
@@ -14,6 +13,10 @@
 #include <algorithm>
 #include <limits>
 #include <fstream>
+
+#include "cr7_robot_controller/planners/pilz/cr7_pilz_planner.hpp"
+#include "cr7_robot_controller/utils/trajectory_replanner.hpp"
+#include "cr7_robot_controller/utils/trajectory_analyzer.hpp"
 
 using namespace std::chrono_literals;
 
@@ -363,8 +366,12 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
             RCLCPP_INFO(logger_, "轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
             
             // 重规划路径频率
-            plan.trajectory_.joint_trajectory = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(
-                plan.trajectory_.joint_trajectory, 0.03);  // 每30ms一个点
+            // plan.trajectory_.joint_trajectory = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(
+            //     plan.trajectory_.joint_trajectory, 0.03);  // 每30ms一个点
+
+            plan.trajectory_.joint_trajectory = cr7_controller::utils::TrajectoryReplanner::reparameterizeTrajectory(
+                plan.trajectory_.joint_trajectory, 0.03, 0, 3.0);  // 每30ms一个点
+
             RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
 
             // 验证LIN轨迹是否直
