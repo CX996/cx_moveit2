@@ -1010,7 +1010,8 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseImpl(
             ss << "Ompl_trajectory_" << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S") << "_";
             std::string trajectory_prefix = ss.str();
             
-            cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(plan.trajectory_, trajectory_prefix, logger_);
+            cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
+                            plan.trajectory_, trajectory_prefix, move_group_, logger_);
         }
         else 
         {

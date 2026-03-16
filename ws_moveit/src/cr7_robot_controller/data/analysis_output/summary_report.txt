@@ -1,23 +1,23 @@
 ======================================================================
 CR7机器人轨迹日志分析汇总报告
 ======================================================================
-生成时间: 2026-03-16 11:18:56
+生成时间: 2026-03-16 11:40:20
 
 
 【总体统计】
 ----------------------------------------------------------------------
 分析文件数量: 9
-总轨迹点数: 909
-平均轨迹时间: 3.000 秒
+总轨迹点数: 1382
+平均轨迹时间: 4.569 秒
 
 【文件列表】
 ----------------------------------------------------------------------
-pilz_LIN_trajectory_20260316_111408_detailed.txt: 101 点, 3.000 秒
-pilz_LIN_trajectory_20260316_110901_detailed.txt: 101 点, 3.000 秒
-pilz_LIN_trajectory_20260316_111135_detailed.txt: 101 点, 3.000 秒
-pilz_LIN_trajectory_20260316_111337_detailed.txt: 101 点, 3.000 秒
-pilz_LIN_trajectory_20260316_111236_detailed.txt: 101 点, 3.000 秒
-pilz_LIN_trajectory_20260316_110938_detailed.txt: 101 点, 3.000 秒
-pilz_LIN_trajectory_20260316_111208_detailed.txt: 101 点, 3.000 秒
-pilz_LIN_trajectory_20260316_111006_detailed.txt: 101 点, 3.000 秒
-pilz_LIN_trajectory_20260316_111434_detailed.txt: 101 点, 3.000 秒
+Ompl_trajectory_20260316_113831_detailed.txt: 168 点, 5.000 秒
+Ompl_trajectory_20260316_113848_detailed.txt: 172 点, 5.125 秒
+pilz_LIN_trajectory_20260316_113931_detailed.txt: 101 点, 3.000 秒
+Ompl_trajectory_20260316_113903_detailed.txt: 288 点, 8.589 秒
+Ompl_trajectory_20260316_113808_detailed.txt: 173 点, 5.156 秒
+pilz_LIN_trajectory_20260316_113817_detailed.txt: 101 点, 3.000 秒
+Ompl_trajectory_20260316_113937_detailed.txt: 148 点, 4.393 秒
+pilz_LIN_trajectory_20260316_113856_detailed.txt: 101 点, 3.000 秒
+Ompl_trajectory_20260316_113923_detailed.txt: 130 点, 3.856 秒
