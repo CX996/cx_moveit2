@@ -722,8 +722,8 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
 
                         auto& traj = plan.trajectory_.joint_trajectory;
                         RCLCPP_INFO(logger_, "原始轨迹点数: %zu", traj.points.size());
-                        traj = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(traj, 0.03);  // 每30ms一个点
-                        RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", traj.points.size());
+                        // traj = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(traj, 0.03);  // 每30ms一个点
+                        // RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", traj.points.size());
 
                     }
 
@@ -733,7 +733,8 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
                     std::stringstream ss;
                     ss << "Ompl_trajectory_" << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S");
                     std::string trajectory_prefix = ss.str();
-                    cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(plan.trajectory_, trajectory_prefix, move_group_, logger_);
+                    cr7_controller::utils::TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
+                                    plan.trajectory_, trajectory_prefix, move_group_, logger_);
 
                     // 执行规划
                     RCLCPP_INFO(logger_, "开始执行轨迹...");
