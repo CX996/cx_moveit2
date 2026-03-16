@@ -451,9 +451,26 @@ class LogDataAnalyzer:
             ax8.set_title('轨迹点密度')
             ax8.grid(True, alpha=0.3)
             
-            # 9. 空白占位
+            # 9. 笛卡尔姿态随时间变化
             ax9 = fig.add_subplot(3, 3, 9)
-            ax9.axis('off')
+            cart_orientations = []
+            for point in data['trajectory_points']:
+                if 'cartesian_orientation' in point and point['cartesian_orientation']:
+                    cart_orientations.append(point['cartesian_orientation'])
+            if cart_orientations:
+                cart_orientations = np.array(cart_orientations)
+                ax9.plot(times, cart_orientations[:, 0], label='qx', linewidth=1.5, alpha=0.8)
+                ax9.plot(times, cart_orientations[:, 1], label='qy', linewidth=1.5, alpha=0.8)
+                ax9.plot(times, cart_orientations[:, 2], label='qz', linewidth=1.5, alpha=0.8)
+                ax9.plot(times, cart_orientations[:, 3], label='qw', linewidth=1.5, alpha=0.8)
+                ax9.set_xlabel('时间 (s)')
+                ax9.set_ylabel('姿态四元数')
+                ax9.set_title('笛卡尔姿态随时间变化')
+                ax9.grid(True, alpha=0.3)
+                ax9.legend()
+            else:
+                ax9.text(0.5, 0.5, '无姿态数据', ha='center', va='center')
+                ax9.axis('off')
             
             plt.suptitle(f'{file_name} 轨迹分析', fontsize=16, fontweight='bold')
             plt.tight_layout()

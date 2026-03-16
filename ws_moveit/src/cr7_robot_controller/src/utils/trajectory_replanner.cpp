@@ -14,6 +14,10 @@
 namespace cr7_controller {
 namespace utils {
 
+// 初始化静态成员变量
+double TrajectoryReplanner::max_velocity_ = 3.0;     // 默认最大关节速度 (rad/s)
+double TrajectoryReplanner::max_acceleration_ = 10.0; // 默认最大关节加速度 (rad/s²)
+
 namespace {
 static double toSec(const builtin_interfaces::msg::Duration& t)
 {
@@ -329,8 +333,13 @@ double TrajectoryReplanner::interpolateS(
     return s_values.back();
 }
 
+
 /**
- * @brief 在s参数上对轨迹点进行插值
+ * @brief 在轨迹上插值
+ * @param traj 输入轨迹
+ * @param s_values 轨迹上的s参数序列
+ * @param s 要插值的s参数值
+ * @return 插值得到的轨迹点
  */
 trajectory_msgs::msg::JointTrajectoryPoint TrajectoryReplanner::interpolateTrajectoryPoint(
     const trajectory_msgs::msg::JointTrajectory& traj,
@@ -338,81 +347,174 @@ trajectory_msgs::msg::JointTrajectoryPoint TrajectoryReplanner::interpolateTraje
     double s)
 {
     trajectory_msgs::msg::JointTrajectoryPoint result;
-    
-    if (s <= s_values.front()) 
+
+    // ================================
+    // 1. 边界情况处理
+    // ================================
+
+    // 若采样点位于轨迹起点之前
+    if (s <= s_values.front())
     {
-        return traj.points.front();
+        auto p = traj.points.front();
+
+        // 工业控制器通常要求轨迹起点速度和加速度为0
+        std::fill(p.velocities.begin(), p.velocities.end(), 0.0);
+        std::fill(p.accelerations.begin(), p.accelerations.end(), 0.0);
+
+        return p;
     }
-    if (s >= s_values.back()) 
+
+    // 若采样点位于轨迹终点之后
+    if (s >= s_values.back())
     {
-        return traj.points.back();
+        auto p = traj.points.back();
+
+        // 强制末端停止
+        std::fill(p.velocities.begin(), p.velocities.end(), 0.0);
+        std::fill(p.accelerations.begin(), p.accelerations.end(), 0.0);
+
+        return p;
     }
-    
-    // 找到s所在的区间
+
+    // ================================
+    // 2. 查找当前s所在的轨迹段
+    // ================================
+
     size_t segment = 0;
-    for (size_t i = 0; i < s_values.size() - 1; i++) 
+
+    for (size_t i = 0; i < s_values.size() - 1; i++)
     {
-        if (s >= s_values[i] && s <= s_values[i+1]) 
+        if (s >= s_values[i] && s <= s_values[i + 1])
         {
             segment = i;
             break;
         }
     }
-    
-    // 获取当前轨迹段的起点和终点
+
     const auto& p0 = traj.points[segment];
     const auto& p1 = traj.points[segment + 1];
-    double s0 = s_values[segment];  // 轨迹段起始路径参数
-    double s1 = s_values[segment + 1];  // 轨迹段结束路径参数
-    double T = s1 - s0;  // 轨迹段路径参数范围
-    double tau = s - s0;  // 当前路径参数在轨迹段内的相对值
-    
+
+    double s0 = s_values[segment];
+    double s1 = s_values[segment + 1];
+
+    double t0 = toSec(p0.time_from_start);
+    double t1 = toSec(p1.time_from_start);
+
+    double delta_s = s1 - s0;
+    double delta_t = t1 - t0;
+
+    // ================================
+    // 3. 极小路径段保护
+    // ================================
+    // 如果路径段非常短，五次多项式会导致数值不稳定
+    // 工业机器人通常直接退化为线性插值
+
+    if (delta_s < 1e-5 || delta_t < 1e-5)
+    {
+        trajectory_msgs::msg::JointTrajectoryPoint p = p0;
+
+        double alpha = (s - s0) / (s1 - s0);
+
+        size_t dof = p0.positions.size();
+
+        p.positions.resize(dof);
+
+        for (size_t j = 0; j < dof; j++)
+        {
+            p.positions[j] =
+                p0.positions[j] +
+                alpha * (p1.positions[j] - p0.positions[j]);
+        }
+
+        p.velocities.assign(dof, 0.0);
+        p.accelerations.assign(dof, 0.0);
+
+        return p;
+    }
+
+    // ================================
+    // 4. 计算ds/dt
+    // ================================
+
+    double ds_dt = delta_s / delta_t;
+
+    // 当前s在本段中的局部变量
+    double tau = s - s0;
+    double T = delta_s;
+
     size_t dof = p0.positions.size();
+
     result.positions.resize(dof);
     result.velocities.resize(dof);
     result.accelerations.resize(dof);
-    
-    // 对每个关节进行五次多项式插值
+
+    // ================================
+    // 5. 速度、加速度限制
+    // ================================
+    // 工业机器人控制器必须限制速度和加速度，
+    // 防止插值放大导致轨迹不可执行
+
+    // 使用全局静态参数
+    const double MAX_VEL = TrajectoryReplanner::getMaxVelocity();     // rad/s
+    const double MAX_ACC = TrajectoryReplanner::getMaxAcceleration(); // rad/s²
+
+    // ================================
+    // 6. 对每个关节进行五次多项式插值
+    // ================================
+
     for (size_t j = 0; j < dof; j++)
     {
-        // 提取边界条件
-        double q0 = p0.positions[j];          // 起始位置
-        double q1 = p1.positions[j];          // 结束位置
-        double v0 = p0.velocities.empty() ? 0.0 : p0.velocities[j];  // 起始速度
-        double v1 = p1.velocities.empty() ? 0.0 : p1.velocities[j];  // 结束速度
-        double a0 = p0.accelerations.empty() ? 0.0 : p0.accelerations[j];  // 起始加速度
-        double a1 = p1.accelerations.empty() ? 0.0 : p1.accelerations[j];  // 结束加速度
+        double q0 = p0.positions[j];
+        double q1 = p1.positions[j];
 
-        // 计算五次多项式系数
-        double c0 = q0;                          // 常数项（起始位置）
-        double c1 = v0;                          // 一次项系数（起始速度）
-        double c2 = a0 / 2.0;                    // 二次项系数（起始加速度）
+        double v0_t = p0.velocities.empty() ? 0.0 : p0.velocities[j];
+        double v1_t = p1.velocities.empty() ? 0.0 : p1.velocities[j];
 
-        // 预计算路径参数相关的幂次，提高计算效率
+        double a0_t = p0.accelerations.empty() ? 0.0 : p0.accelerations[j];
+        double a1_t = p1.accelerations.empty() ? 0.0 : p1.accelerations[j];
+
+        // ------------------------------
+        // 转换为路径参数域
+        // dq/dt -> dq/ds
+        // ------------------------------
+
+        double v0 = v0_t / ds_dt;
+        double v1 = v1_t / ds_dt;
+
+        double a0 = a0_t / (ds_dt * ds_dt);
+        double a1 = a1_t / (ds_dt * ds_dt);
+
+        // ------------------------------
+        // quintic 多项式系数
+        // ------------------------------
+
         double T2 = T*T;
         double T3 = T2*T;
         double T4 = T3*T;
         double T5 = T4*T;
 
-        // 计算三次项系数
+        double c0 = q0;
+        double c1 = v0;
+        double c2 = a0 / 2.0;
+
         double c3 =
             (20*(q1-q0) - (8*v1+12*v0)*T - (3*a0-a1)*T2) / (2*T3);
 
-        // 计算四次项系数
         double c4 =
             (30*(q0-q1) + (14*v1+16*v0)*T + (3*a0-2*a1)*T2) / (2*T4);
 
-        // 计算五次项系数
         double c5 =
             (12*(q1-q0) - (6*v1+6*v0)*T - (a0-a1)*T2) / (2*T5);
 
-        // 预计算相对路径参数的幂次，提高计算效率
         double tau2 = tau*tau;
         double tau3 = tau2*tau;
         double tau4 = tau3*tau;
         double tau5 = tau4*tau;
 
-        // 计算当前路径参数点的位置
+        // ------------------------------
+        // 位置
+        // ------------------------------
+
         result.positions[j] =
             c0 +
             c1*tau +
@@ -421,24 +523,55 @@ trajectory_msgs::msg::JointTrajectoryPoint TrajectoryReplanner::interpolateTraje
             c4*tau4 +
             c5*tau5;
 
-        // 计算当前路径参数点的速度（位置对路径参数的一阶导数）
-        result.velocities[j] =
+        // ------------------------------
+        // dq/ds
+        // ------------------------------
+
+        double dq_ds =
             c1 +
             2*c2*tau +
             3*c3*tau2 +
             4*c4*tau3 +
             5*c5*tau4;
 
-        // 计算当前路径参数点的加速度（位置对路径参数的二阶导数）
-        result.accelerations[j] =
+        // ------------------------------
+        // d²q/ds²
+        // ------------------------------
+
+        double d2q_ds2 =
             2*c2 +
             6*c3*tau +
             12*c4*tau2 +
             20*c5*tau3;
+
+        // ------------------------------
+        // 转回时间域
+        // ------------------------------
+
+        double vel = dq_ds * ds_dt;
+        double acc = d2q_ds2 * ds_dt * ds_dt;
+
+        // ------------------------------
+        // 速度限幅
+        // ------------------------------
+
+        if (vel > MAX_VEL) vel = MAX_VEL;
+        if (vel < -MAX_VEL) vel = -MAX_VEL;
+
+        // ------------------------------
+        // 加速度限幅
+        // ------------------------------
+
+        if (acc > MAX_ACC) acc = MAX_ACC;
+        if (acc < -MAX_ACC) acc = -MAX_ACC;
+
+        result.velocities[j] = vel;
+        result.accelerations[j] = acc;
     }
-    
+
     return result;
 }
+
 
 /**
  * @brief 在新的时间点上采样轨迹
@@ -627,6 +760,38 @@ trajectory_msgs::msg::JointTrajectory TrajectoryReplanner::resampleTrajectory(
     output.points.push_back(end_point);
 
     return output;
+}
+
+/**
+ * @brief 设置全局最大关节速度
+ */
+void TrajectoryReplanner::setMaxVelocity(double max_velocity)
+{
+    max_velocity_ = max_velocity;
+}
+
+/**
+ * @brief 设置全局最大关节加速度
+ */
+void TrajectoryReplanner::setMaxAcceleration(double max_acceleration)
+{
+    max_acceleration_ = max_acceleration;
+}
+
+/**
+ * @brief 获取全局最大关节速度
+ */
+double TrajectoryReplanner::getMaxVelocity()
+{
+    return max_velocity_;
+}
+
+/**
+ * @brief 获取全局最大关节加速度
+ */
+double TrajectoryReplanner::getMaxAcceleration()
+{
+    return max_acceleration_;
 }
 
 } // namespace utils

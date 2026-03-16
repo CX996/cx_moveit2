@@ -26,6 +26,11 @@ namespace utils {
  * 这个类提供轨迹重规划相关的静态工具函数
  */
 class TrajectoryReplanner {
+private:
+    // 全局静态参数
+    static double max_velocity_;     // 最大关节速度 (rad/s)
+    static double max_acceleration_; // 最大关节加速度 (rad/s²)
+
 public:
     /**
      * @brief 重新规划轨迹的时间特性（保持路径形状，改变速度和加速度）
@@ -195,6 +200,30 @@ public:
     static trajectory_msgs::msg::JointTrajectory resampleTrajectory(
         const trajectory_msgs::msg::JointTrajectory& input_traj,
         double dt);
+
+    /**
+     * @brief 设置全局最大关节速度
+     * @param max_velocity 最大关节速度 (rad/s)
+     */
+    static void setMaxVelocity(double max_velocity);
+
+    /**
+     * @brief 设置全局最大关节加速度
+     * @param max_acceleration 最大关节加速度 (rad/s²)
+     */
+    static void setMaxAcceleration(double max_acceleration);
+
+    /**
+     * @brief 获取全局最大关节速度
+     * @return 最大关节速度 (rad/s)
+     */
+    static double getMaxVelocity();
+
+    /**
+     * @brief 获取全局最大关节加速度
+     * @return 最大关节加速度 (rad/s²)
+     */
+    static double getMaxAcceleration();
 };
 
 } // namespace utils
