@@ -722,7 +722,10 @@ CR7BaseController::Result CR7OMPLPlanner::moveToPoseWithIKSolutions(
 
                         auto& traj = plan.trajectory_.joint_trajectory;
                         RCLCPP_INFO(logger_, "原始轨迹点数: %zu", traj.points.size());
-                        traj = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(traj, 0.03);  // 每30ms一个点
+                        cr7_controller::utils::TrajectoryReplanner replanner;
+                        replanner.setVelocityScalingFactor(config_.velocity_scale);
+                        replanner.setAccelerationScalingFactor(config_.acceleration_scale);
+                        traj = replanner.resampleTrajectory(traj, 0.03);  // 每30ms一个点
                         RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", traj.points.size());
 
                     }

@@ -27,11 +27,27 @@ namespace utils {
  */
 class TrajectoryReplanner {
 private:
-    // 全局静态参数
-    static double max_velocity_;     // 最大关节速度 (rad/s)
-    static double max_acceleration_; // 最大关节加速度 (rad/s²)
+    // 关节限制参数
+    std::map<std::string, double> joint_velocities_;     // 各关节最大速度 (rad/s)
+    std::map<std::string, double> joint_accelerations_;  // 各关节最大加速度 (rad/s²)
+    double velocity_scaling_factor_;   // 速度缩放因子
+    double acceleration_scaling_factor_; // 加速度缩放因子
+    bool limits_loaded_;               // 限制是否已加载
 
 public:
+    /**
+     * @brief 构造函数
+     * @param config_path 配置文件路径
+     */
+    TrajectoryReplanner(const std::string& config_path = "");
+
+    /**
+     * @brief 加载关节限制配置文件
+     * @param config_path 配置文件路径
+     * @return 是否加载成功
+     */
+    bool loadJointLimits(const std::string& config_path);
+
     /**
      * @brief 重新规划轨迹的时间特性（保持路径形状，改变速度和加速度）
      *
@@ -49,7 +65,7 @@ public:
      * @param max_jerk 最大加加速度（可选，单位：路径参数/秒³）
      * @return 重新规划时间后的关节轨迹
      */
-    static trajectory_msgs::msg::JointTrajectory reparameterizeTrajectory(
+    trajectory_msgs::msg::JointTrajectory reparameterizeTrajectory(
         const trajectory_msgs::msg::JointTrajectory& input_traj,
         double dt,
         int mode = 0,
@@ -63,7 +79,7 @@ public:
      * @param traj 输入轨迹
      * @return 路径参数数组
      */
-    static std::vector<double> calculatePathParameterization(
+    std::vector<double> calculatePathParameterization(
         const trajectory_msgs::msg::JointTrajectory& traj);
 
     /**
@@ -71,7 +87,7 @@ public:
      * @param traj 输入轨迹
      * @return 时间数组
      */
-    static std::vector<double> extractTimes(
+    std::vector<double> extractTimes(
         const trajectory_msgs::msg::JointTrajectory& traj);
 
     /**
@@ -83,7 +99,7 @@ public:
      * @param new_s_values 输出新路径参数序列
      * @param dt 时间步长
      */
-    static void calculateTimeParameterization_FixedTotalTime(
+    void calculateTimeParameterization_FixedTotalTime(
         const std::vector<double>& original_times,
         const std::vector<double>& s_values,
         double target_total_time,
@@ -102,7 +118,7 @@ public:
      * @param new_s_values 输出新路径参数序列
      * @param dt 时间步长
      */
-    static void calculateTimeParameterization_VelAccConstraints(
+    void calculateTimeParameterization_VelAccConstraints(
         const std::vector<double>& original_times,
         const std::vector<double>& s_values,
         double max_velocity,
@@ -120,7 +136,7 @@ public:
      * @param new_s_values 输出新路径参数序列
      * @param dt 时间步长
      */
-    static void calculateTimeParameterization_PreserveRatio(
+    void calculateTimeParameterization_PreserveRatio(
         const std::vector<double>& original_times,
         const std::vector<double>& s_values,
         std::vector<double>& new_times,
@@ -134,7 +150,7 @@ public:
      * @param t 时间值
      * @return 插值后的路径参数值
      */
-    static double interpolateS(
+    double interpolateS(
         const std::vector<double>& times,
         const std::vector<double>& s_values,
         double t);
@@ -142,7 +158,7 @@ public:
     /**
      * @brief 在s参数上对轨迹点进行插值
      */
-    static trajectory_msgs::msg::JointTrajectoryPoint interpolateTrajectoryPoint(
+    trajectory_msgs::msg::JointTrajectoryPoint interpolateTrajectoryPoint(
         const trajectory_msgs::msg::JointTrajectory& traj,
         const std::vector<double>& s_values,
         double s);
@@ -155,7 +171,7 @@ public:
      * @param dt 时间步长
      * @return 重采样后的轨迹
      */
-    static trajectory_msgs::msg::JointTrajectory resampleAtNewTimes(
+    trajectory_msgs::msg::JointTrajectory resampleAtNewTimes(
         const trajectory_msgs::msg::JointTrajectory& input_traj,
         const std::vector<double>& new_times,
         const std::vector<double>& new_s_values,
@@ -197,33 +213,47 @@ public:
      * @param dt 重采样的时间步长（秒），建议值：0.01-0.05秒
      * @return 重采样后的关节轨迹
      */
-    static trajectory_msgs::msg::JointTrajectory resampleTrajectory(
+    trajectory_msgs::msg::JointTrajectory resampleTrajectory(
         const trajectory_msgs::msg::JointTrajectory& input_traj,
         double dt);
 
     /**
-     * @brief 设置全局最大关节速度
-     * @param max_velocity 最大关节速度 (rad/s)
+     * @brief 设置速度缩放因子
+     * @param scaling_factor 速度缩放因子 (0.0-1.0)
      */
-    static void setMaxVelocity(double max_velocity);
+    void setVelocityScalingFactor(double scaling_factor);
 
     /**
-     * @brief 设置全局最大关节加速度
-     * @param max_acceleration 最大关节加速度 (rad/s²)
+     * @brief 设置加速度缩放因子
+     * @param scaling_factor 加速度缩放因子 (0.0-1.0)
      */
-    static void setMaxAcceleration(double max_acceleration);
+    void setAccelerationScalingFactor(double scaling_factor);
 
     /**
-     * @brief 获取全局最大关节速度
-     * @return 最大关节速度 (rad/s)
+     * @brief 获取速度缩放因子
+     * @return 速度缩放因子
      */
-    static double getMaxVelocity();
+    double getVelocityScalingFactor() const;
 
     /**
-     * @brief 获取全局最大关节加速度
-     * @return 最大关节加速度 (rad/s²)
+     * @brief 获取加速度缩放因子
+     * @return 加速度缩放因子
      */
-    static double getMaxAcceleration();
+    double getAccelerationScalingFactor() const;
+
+    /**
+     * @brief 获取关节最大速度
+     * @param joint_name 关节名称
+     * @return 关节最大速度 (rad/s)
+     */
+    double getJointMaxVelocity(const std::string& joint_name) const;
+
+    /**
+     * @brief 获取关节最大加速度
+     * @param joint_name 关节名称
+     * @return 关节最大加速度 (rad/s²)
+     */
+    double getJointMaxAcceleration(const std::string& joint_name) const;
 };
 
 } // namespace utils

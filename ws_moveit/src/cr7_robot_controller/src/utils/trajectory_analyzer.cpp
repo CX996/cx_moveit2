@@ -234,6 +234,15 @@ void TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
                 double qz = q.z();
                 double qw = q.w();
                 
+                // 确保四元数的实部(w)为正，保持表示方式一致
+                // 因为 (w, x, y, z) 和 (-w, -x, -y, -z) 表示同一个姿态
+                if (qw < 0) {
+                    qx = -qx;
+                    qy = -qy;
+                    qz = -qz;
+                    qw = -qw;
+                }
+                
                 file << "  笛卡尔位置: [" << std::fixed << std::setprecision(6)
                      << x << ", " << y << ", " << z << "]" << std::endl;
                 file << "  笛卡尔姿态: [" << std::fixed << std::setprecision(6)

@@ -368,9 +368,13 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
             // 重规划路径频率
             // plan.trajectory_.joint_trajectory = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(
             //     plan.trajectory_.joint_trajectory, 0.03);  // 每30ms一个点
-
-            plan.trajectory_.joint_trajectory = cr7_controller::utils::TrajectoryReplanner::reparameterizeTrajectory(
-                plan.trajectory_.joint_trajectory, 0.03, 0, 3.0);  // 每30ms一个点
+            
+            // 重参数化路径
+            cr7_controller::utils::TrajectoryReplanner replanner;
+            replanner.setVelocityScalingFactor(config.velocity_scale);
+            replanner.setAccelerationScalingFactor(config.acceleration_scale);
+            plan.trajectory_.joint_trajectory = replanner.reparameterizeTrajectory(
+                                plan.trajectory_.joint_trajectory, 0.03, 0, 3.0);  // 每30ms一个点
 
             RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
 

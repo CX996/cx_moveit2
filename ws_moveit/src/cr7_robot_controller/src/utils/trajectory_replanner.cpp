@@ -1,5 +1,8 @@
 #include <vector>
 #include <cmath>
+#include <fstream>
+#include <yaml-cpp/yaml.h>
+#include <map>
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -14,16 +17,116 @@
 namespace cr7_controller {
 namespace utils {
 
-// 初始化静态成员变量
-double TrajectoryReplanner::max_velocity_ = 3.0;     // 默认最大关节速度 (rad/s)
-double TrajectoryReplanner::max_acceleration_ = 10.0; // 默认最大关节加速度 (rad/s²)
-
 namespace {
 static double toSec(const builtin_interfaces::msg::Duration& t)
 {
     return static_cast<double>(t.sec) +
            static_cast<double>(t.nanosec) * 1e-9;
 }
+}
+
+// 构造函数
+TrajectoryReplanner::TrajectoryReplanner(const std::string& config_path)
+    : velocity_scaling_factor_(0.1),
+      acceleration_scaling_factor_(0.1),
+      limits_loaded_(false)
+{
+    if (!config_path.empty()) {
+        loadJointLimits(config_path);
+    }
+}
+
+// 加载关节限制配置文件
+bool TrajectoryReplanner::loadJointLimits(const std::string& config_path)
+{
+    try {
+        YAML::Node config = YAML::LoadFile(config_path);
+        
+        // 加载缩放因子
+        if (config["default_velocity_scaling_factor"]) {
+            velocity_scaling_factor_ = config["default_velocity_scaling_factor"].as<double>();
+        }
+        if (config["default_acceleration_scaling_factor"]) {
+            acceleration_scaling_factor_ = config["default_acceleration_scaling_factor"].as<double>();
+        }
+        
+        // 加载关节限制
+        if (config["joint_limits"]) {
+            const YAML::Node& joint_limits = config["joint_limits"];
+            for (const auto& joint : joint_limits) {
+                const std::string& joint_name = joint.first.as<std::string>();
+                const YAML::Node& limits = joint.second;
+                
+                if (limits["has_velocity_limits"] && limits["has_velocity_limits"].as<bool>()) {
+                    if (limits["max_velocity"]) {
+                        joint_velocities_[joint_name] = limits["max_velocity"].as<double>();
+                    }
+                }
+                
+                if (limits["has_acceleration_limits"] && limits["has_acceleration_limits"].as<bool>()) {
+                    if (limits["max_acceleration"]) {
+                        joint_accelerations_[joint_name] = limits["max_acceleration"].as<double>();
+                    }
+                }
+            }
+        }
+        
+        limits_loaded_ = true;
+        return true;
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(rclcpp::get_logger("TrajectoryReplanner"), "Failed to load joint limits: %s", e.what());
+        return false;
+    }
+}
+
+// 设置速度缩放因子
+void TrajectoryReplanner::setVelocityScalingFactor(double scaling_factor)
+{
+    if (scaling_factor >= 0.0 && scaling_factor <= 1.0) {
+        velocity_scaling_factor_ = scaling_factor;
+    }
+}
+
+// 设置加速度缩放因子
+void TrajectoryReplanner::setAccelerationScalingFactor(double scaling_factor)
+{
+    if (scaling_factor >= 0.0 && scaling_factor <= 1.0) {
+        acceleration_scaling_factor_ = scaling_factor;
+    }
+}
+
+// 获取速度缩放因子
+double TrajectoryReplanner::getVelocityScalingFactor() const
+{
+    return velocity_scaling_factor_;
+}
+
+// 获取加速度缩放因子
+double TrajectoryReplanner::getAccelerationScalingFactor() const
+{
+    return acceleration_scaling_factor_;
+}
+
+// 获取关节最大速度
+double TrajectoryReplanner::getJointMaxVelocity(const std::string& joint_name) const
+{
+    auto it = joint_velocities_.find(joint_name);
+    if (it != joint_velocities_.end()) {
+        return it->second * velocity_scaling_factor_;
+    }
+    // 默认值
+    return 3.0 * velocity_scaling_factor_;
+}
+
+// 获取关节最大加速度
+double TrajectoryReplanner::getJointMaxAcceleration(const std::string& joint_name) const
+{
+    auto it = joint_accelerations_.find(joint_name);
+    if (it != joint_accelerations_.end()) {
+        return it->second * acceleration_scaling_factor_;
+    }
+    // 默认值
+    return 10.0 * acceleration_scaling_factor_;
 }
 
 /**
@@ -454,10 +557,6 @@ trajectory_msgs::msg::JointTrajectoryPoint TrajectoryReplanner::interpolateTraje
     // 工业机器人控制器必须限制速度和加速度，
     // 防止插值放大导致轨迹不可执行
 
-    // 使用全局静态参数
-    const double MAX_VEL = TrajectoryReplanner::getMaxVelocity();     // rad/s
-    const double MAX_ACC = TrajectoryReplanner::getMaxAcceleration(); // rad/s²
-
     // ================================
     // 6. 对每个关节进行五次多项式插值
     // ================================
@@ -555,15 +654,25 @@ trajectory_msgs::msg::JointTrajectoryPoint TrajectoryReplanner::interpolateTraje
         // 速度限幅
         // ------------------------------
 
-        if (vel > MAX_VEL) vel = MAX_VEL;
-        if (vel < -MAX_VEL) vel = -MAX_VEL;
+        // 获取关节特定的速度限制
+        double joint_max_vel = 3.0; // 默认值
+        if (j < traj.joint_names.size()) {
+            joint_max_vel = getJointMaxVelocity(traj.joint_names[j]);
+        }
+        if (vel > joint_max_vel) vel = joint_max_vel;
+        if (vel < -joint_max_vel) vel = -joint_max_vel;
 
         // ------------------------------
         // 加速度限幅
         // ------------------------------
 
-        if (acc > MAX_ACC) acc = MAX_ACC;
-        if (acc < -MAX_ACC) acc = -MAX_ACC;
+        // 获取关节特定的加速度限制
+        double joint_max_acc = 10.0; // 默认值
+        if (j < traj.joint_names.size()) {
+            joint_max_acc = getJointMaxAcceleration(traj.joint_names[j]);
+        }
+        if (acc > joint_max_acc) acc = joint_max_acc;
+        if (acc < -joint_max_acc) acc = -joint_max_acc;
 
         result.velocities[j] = vel;
         result.accelerations[j] = acc;
@@ -762,37 +871,7 @@ trajectory_msgs::msg::JointTrajectory TrajectoryReplanner::resampleTrajectory(
     return output;
 }
 
-/**
- * @brief 设置全局最大关节速度
- */
-void TrajectoryReplanner::setMaxVelocity(double max_velocity)
-{
-    max_velocity_ = max_velocity;
-}
 
-/**
- * @brief 设置全局最大关节加速度
- */
-void TrajectoryReplanner::setMaxAcceleration(double max_acceleration)
-{
-    max_acceleration_ = max_acceleration;
-}
-
-/**
- * @brief 获取全局最大关节速度
- */
-double TrajectoryReplanner::getMaxVelocity()
-{
-    return max_velocity_;
-}
-
-/**
- * @brief 获取全局最大关节加速度
- */
-double TrajectoryReplanner::getMaxAcceleration()
-{
-    return max_acceleration_;
-}
 
 } // namespace utils
 } // namespace cr7_controller
