@@ -61,9 +61,10 @@ public:
      * @param dt 输出轨迹的时间步长（秒），建议与底层控制频率匹配
      * @param mode 规划模式：0=指定总时间，1=指定最大速度/加速度
      * @param target_total_time 目标总时间（mode=0时有效）
-     * @param max_velocity 最大速度（mode=1时有效，单位：路径参数/秒）
-     * @param max_acceleration 最大加速度（mode=1时有效，单位：路径参数/秒²）
-     * @param max_jerk 最大加加速度（可选，单位：路径参数/秒³）
+     * @param max_velocity 最大速度（mode=1时有效，单位：米/秒或弧度/秒，取决于是否提供cartesian_path_length）
+     * @param max_acceleration 最大加速度（mode=1时有效，单位：米/秒²或弧度/秒²，取决于是否提供cartesian_path_length）
+     * @param max_jerk 最大加加速度（可选，单位：米/秒³或弧度/秒³，取决于是否提供cartesian_path_length）
+     * @param cartesian_path_length 笛卡尔空间的路径长度（米），如果提供则基于笛卡尔空间进行规划
      * @return 重新规划时间后的关节轨迹
      */
     trajectory_msgs::msg::JointTrajectory reparameterizeTrajectory(
@@ -73,7 +74,8 @@ public:
         double target_total_time = 0.0,
         double max_velocity = 0.0,
         double max_acceleration = 0.0,
-        double max_jerk = 0.0);
+        double max_jerk = 0.0,
+        double cartesian_path_length = -1.0);
 
     /**
      * @brief 计算路径参数化 s∈[0,1]
@@ -116,14 +118,18 @@ public:
 
     /**
      * @brief 计算新的时间参数化（S曲线速度规划）
+     * 
+     * 该方法使用S曲线规划器计算新的时间参数化，支持基于关节空间或笛卡尔空间的路径长度
+     * 
      * @param original_times 原始时间序列
      * @param s_values 路径参数序列
-     * @param max_velocity 最大速度
-     * @param max_acceleration 最大加速度
-     * @param max_jerk 最大加加速度
+     * @param max_velocity 最大速度（单位：米/秒或弧度/秒，取决于total_path_length的单位）
+     * @param max_acceleration 最大加速度（单位：米/秒²或弧度/秒²，取决于total_path_length的单位）
+     * @param max_jerk 最大加加速度（可选，单位：米/秒³或弧度/秒³，取决于total_path_length的单位）
      * @param new_times 输出新时间序列
      * @param new_s_values 输出新路径参数序列
      * @param dt 时间步长
+     * @param total_path_length 路径长度（单位：米或弧度，取决于是否基于笛卡尔空间）
      */
     void calculateTimeParameterization_VelAccConstraints(
         const std::vector<double>& original_times,

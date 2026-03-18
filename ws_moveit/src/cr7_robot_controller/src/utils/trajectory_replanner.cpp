@@ -242,7 +242,8 @@ trajectory_msgs::msg::JointTrajectory TrajectoryReplanner::reparameterizeTraject
     double target_total_time,
     double max_velocity,
     double max_acceleration,
-    double max_jerk)
+    double max_jerk,
+    double cartesian_path_length)
 {
     // 1. 边界检查
     if (input_traj.points.size() < 2)
@@ -270,7 +271,19 @@ trajectory_msgs::msg::JointTrajectory TrajectoryReplanner::reparameterizeTraject
     {
         // 模式1：指定速度/加速度约束
         // 计算实际路径长度
-        double total_path_length = calculatePathLength(input_traj);
+        double total_path_length;
+        if (cartesian_path_length > 0)
+        {
+            // 使用用户提供的笛卡尔空间路径长度
+            total_path_length = cartesian_path_length;
+            RCLCPP_INFO(rclcpp::get_logger("TrajectoryReplanner"), "Using cartesian path length: %.3f meters", total_path_length);
+        }
+        else
+        {
+            // 使用关节空间路径长度
+            total_path_length = calculatePathLength(input_traj);
+            RCLCPP_INFO(rclcpp::get_logger("TrajectoryReplanner"), "Using joint space path length: %.3f radians", total_path_length);
+        }
         calculateTimeParameterization_VelAccConstraints(
             original_times, s_values, max_velocity, max_acceleration, max_jerk,
             new_times, new_s_values, dt, total_path_length);
@@ -386,6 +399,18 @@ void TrajectoryReplanner::calculateTimeParameterization_FixedTotalTime(
 
 /**
  * @brief 计算新的时间参数化（S曲线速度规划）
+ * 
+ * 该方法使用S曲线规划器计算新的时间参数化，支持基于关节空间或笛卡尔空间的路径长度
+ * 
+ * @param original_times 原始时间序列
+ * @param s_values 路径参数序列
+ * @param max_velocity 最大速度（单位：米/秒或弧度/秒，取决于total_path_length的单位）
+ * @param max_acceleration 最大加速度（单位：米/秒²或弧度/秒²，取决于total_path_length的单位）
+ * @param max_jerk 最大加加速度（可选，单位：米/秒³或弧度/秒³，取决于total_path_length的单位）
+ * @param new_times 输出新时间序列
+ * @param new_s_values 输出新路径参数序列
+ * @param dt 时间步长
+ * @param total_path_length 路径长度（单位：米或弧度，取决于是否基于笛卡尔空间）
  */
 void TrajectoryReplanner::calculateTimeParameterization_VelAccConstraints(
     const std::vector<double>& original_times,
@@ -422,6 +447,9 @@ void TrajectoryReplanner::calculateTimeParameterization_VelAccConstraints(
         new_times.push_back(t);
         new_s_values.push_back(s);
     }
+    
+    RCLCPP_INFO(rclcpp::get_logger("TrajectoryReplanner"), "S-curve planning completed. Total time: %.3f seconds, Path length: %.3f, Points: %zu", 
+                total_time, total_path_length, new_times.size());
 }
 
 /**
