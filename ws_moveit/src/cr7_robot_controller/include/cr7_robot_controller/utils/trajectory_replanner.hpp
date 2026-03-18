@@ -84,6 +84,12 @@ public:
         const trajectory_msgs::msg::JointTrajectory& traj);
 
     /**
+     * @brief 计算轨迹的实际路径长度
+     */        
+    double calculatePathLength(
+        const trajectory_msgs::msg::JointTrajectory& traj);
+
+    /**
      * @brief 提取时间序列
      * @param traj 输入轨迹
      * @return 时间数组
@@ -127,7 +133,9 @@ public:
         double max_jerk,
         std::vector<double>& new_times,
         std::vector<double>& new_s_values,
-        double dt);
+        double dt,
+        double total_path_length
+    );
 
     /**
      * @brief 计算新的时间参数化（保持原时间比例）
