@@ -31,7 +31,8 @@ TrajectoryReplanner::TrajectoryReplanner(const std::string& config_path)
       acceleration_scaling_factor_(0.1),
       limits_loaded_(false)
 {
-    if (!config_path.empty()) {
+    if (!config_path.empty()) 
+    {
         loadJointLimits(config_path);
     }
 }
@@ -51,20 +52,25 @@ bool TrajectoryReplanner::loadJointLimits(const std::string& config_path)
         }
         
         // 加载关节限制
-        if (config["joint_limits"]) {
+        if (config["joint_limits"]) 
+        {
             const YAML::Node& joint_limits = config["joint_limits"];
             for (const auto& joint : joint_limits) {
                 const std::string& joint_name = joint.first.as<std::string>();
                 const YAML::Node& limits = joint.second;
                 
-                if (limits["has_velocity_limits"] && limits["has_velocity_limits"].as<bool>()) {
-                    if (limits["max_velocity"]) {
+                if (limits["has_velocity_limits"] && limits["has_velocity_limits"].as<bool>()) 
+                {
+                    if (limits["max_velocity"]) 
+                    {
                         joint_velocities_[joint_name] = limits["max_velocity"].as<double>();
                     }
                 }
                 
-                if (limits["has_acceleration_limits"] && limits["has_acceleration_limits"].as<bool>()) {
-                    if (limits["max_acceleration"]) {
+                if (limits["has_acceleration_limits"] && limits["has_acceleration_limits"].as<bool>()) 
+                {
+                    if (limits["max_acceleration"]) 
+                    {
                         joint_accelerations_[joint_name] = limits["max_acceleration"].as<double>();
                     }
                 }
@@ -111,7 +117,8 @@ double TrajectoryReplanner::getAccelerationScalingFactor() const
 double TrajectoryReplanner::getJointMaxVelocity(const std::string& joint_name) const
 {
     auto it = joint_velocities_.find(joint_name);
-    if (it != joint_velocities_.end()) {
+    if (it != joint_velocities_.end()) 
+    {
         return it->second * velocity_scaling_factor_;
     }
     // 默认值
@@ -122,7 +129,8 @@ double TrajectoryReplanner::getJointMaxVelocity(const std::string& joint_name) c
 double TrajectoryReplanner::getJointMaxAcceleration(const std::string& joint_name) const
 {
     auto it = joint_accelerations_.find(joint_name);
-    if (it != joint_accelerations_.end()) {
+    if (it != joint_accelerations_.end()) 
+    {
         return it->second * acceleration_scaling_factor_;
     }
     // 默认值
@@ -456,7 +464,7 @@ trajectory_msgs::msg::JointTrajectoryPoint TrajectoryReplanner::interpolateTraje
     // ================================
 
     // 若采样点位于轨迹起点之前
-    if (s <= s_values.front())
+    if (s < s_values.front())
     {
         auto p = traj.points.front();
 
@@ -464,17 +472,21 @@ trajectory_msgs::msg::JointTrajectoryPoint TrajectoryReplanner::interpolateTraje
         std::fill(p.velocities.begin(), p.velocities.end(), 0.0);
         std::fill(p.accelerations.begin(), p.accelerations.end(), 0.0);
 
+        RCLCPP_WARN(rclcpp::get_logger("TrajectoryReplanner"), "采样点位于轨迹起点之前，使用起点数据: s=%.3f", s);
+
         return p;
     }
 
     // 若采样点位于轨迹终点之后
-    if (s >= s_values.back())
+    if (s > s_values.back())
     {
         auto p = traj.points.back();
 
         // 强制末端停止
         std::fill(p.velocities.begin(), p.velocities.end(), 0.0);
         std::fill(p.accelerations.begin(), p.accelerations.end(), 0.0);
+
+        RCLCPP_WARN(rclcpp::get_logger("TrajectoryReplanner"), "采样点位于轨迹终点之后，使用终点数据: s=%.3f", s);
 
         return p;
     }
@@ -531,6 +543,8 @@ trajectory_msgs::msg::JointTrajectoryPoint TrajectoryReplanner::interpolateTraje
 
         p.velocities.assign(dof, 0.0);
         p.accelerations.assign(dof, 0.0);
+
+        RCLCPP_WARN(rclcpp::get_logger("TrajectoryReplanner"), "路径段过短，退化为线性插值: delta_s=%.6f, delta_t=%.6f", delta_s, delta_t);
 
         return p;
     }

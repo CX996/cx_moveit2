@@ -30,6 +30,7 @@ private:
     // 关节限制参数
     std::map<std::string, double> joint_velocities_;     // 各关节最大速度 (rad/s)
     std::map<std::string, double> joint_accelerations_;  // 各关节最大加速度 (rad/s²)
+
     double velocity_scaling_factor_;   // 速度缩放因子
     double acceleration_scaling_factor_; // 加速度缩放因子
     bool limits_loaded_;               // 限制是否已加载
@@ -39,7 +40,7 @@ public:
      * @brief 构造函数
      * @param config_path 配置文件路径
      */
-    TrajectoryReplanner(const std::string& config_path = "");
+    TrajectoryReplanner(const std::string& config_path = "/home/xionggu/cx_moveit_test/cx_moveit2/ws_moveit/src/cr7_robot_controller/config/joint_limits.yaml");
 
     /**
      * @brief 加载关节限制配置文件

@@ -374,7 +374,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
             replanner.setVelocityScalingFactor(config.velocity_scale);
             replanner.setAccelerationScalingFactor(config.acceleration_scale);
             plan.trajectory_.joint_trajectory = replanner.reparameterizeTrajectory(
-                                plan.trajectory_.joint_trajectory, 0.03, 0, 3.0);  // 每30ms一个点
+                                plan.trajectory_.joint_trajectory, 0.03, 1, 0, 0.1, 0.5);  // 每30ms一个点
 
             RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
 

@@ -196,8 +196,8 @@ class LogDataAnalyzer:
                         cart_orientations = list(map(float, cart_orient_str.strip('[]').split(', ')))
                         # 确保四元数的实部(w)为正，保持表示方式一致
                         # 因为 (w, x, y, z) 和 (-w, -x, -y, -z) 表示同一个姿态
-                        if len(cart_orientations) == 4 and cart_orientations[3] < 0:
-                            cart_orientations = [-x for x in cart_orientations]
+                        # if len(cart_orientations) == 4 and cart_orientations[3] < 0:
+                        #     cart_orientations = [-x for x in cart_orientations]
                         current_point['cartesian_orientation'] = cart_orientations
             
             # 添加最后一个点

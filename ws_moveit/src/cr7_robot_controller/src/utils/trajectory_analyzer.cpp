@@ -122,6 +122,33 @@ void TrajectoryAnalyzer::printTrajectoryInfo(
     RCLCPP_INFO(logger, "- 总时间: %.3f 秒", end_time - start_time);
 }
 
+
+/**
+ * @brief 计算四元数连续性（检查相邻点间的四元数突变）
+ * @param prev_q 上一个四元数
+ * @param curr_q 当前四元数
+ * @return 如果四元数符号有跳变，返回调整后的当前四元数
+ */
+Eigen::Quaterniond ensureQuaternionContinuity(
+    const Eigen::Quaterniond& prev_q, 
+    const Eigen::Quaterniond& curr_q)
+{
+    // 计算点积
+    double dot = prev_q.w() * curr_q.w() + 
+                prev_q.x() * curr_q.x() + 
+                prev_q.y() * curr_q.y() + 
+                prev_q.z() * curr_q.z();
+    
+    // 如果点积为负，说明两个四元数表示相反的旋转方向
+    // 将它们取为同一半球以保证连续性
+    if (dot < 0) {
+        // 返回取反的四元数
+        return Eigen::Quaterniond(-curr_q.w(), -curr_q.x(), -curr_q.y(), -curr_q.z());
+    }
+    
+    return curr_q;
+}
+
 /**
  * @brief 保存详细轨迹分析
  */
@@ -164,8 +191,18 @@ void TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
         }
     }
     
+    // 添加诊断信息说明
+    file << "\n注意：四元数(qx, qy, qz, qw)表示姿态。" << std::endl;
+    file << "四元数q和-q表示相同的旋转，但会导致数值突变。" << std::endl;
+    file << "在轨迹插值中可能出现符号跳变，这属于正常现象。" << std::endl;
+    
     file << "\n详细轨迹点信息:" << std::endl;
     file << "================" << std::endl;
+    
+    // 用于跟踪前一个四元数
+    Eigen::Quaterniond prev_quat;
+    bool has_prev_quat = false;
+    int discontinuity_count = 0;
     
     for (size_t i = 0; i < points.size(); ++i) {
         const auto& point = points[i];
@@ -229,24 +266,52 @@ void TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
                 double z = transform.translation().z();
                 
                 Eigen::Quaterniond q(transform.rotation());
+                q.normalize();  // 确保是单位四元数
+                
+                // 检查连续性
+                bool discontinuity_detected = false;
+                if (has_prev_quat) {
+                    double dot = prev_quat.w() * q.w() + 
+                                prev_quat.x() * q.x() + 
+                                prev_quat.y() * q.y() + 
+                                prev_quat.z() * q.z();
+                    
+                    if (dot < 0) {
+                        discontinuity_detected = true;
+                        discontinuity_count++;
+                        file << "  [注意] 检测到四元数符号跳变！" << std::endl;
+                        file << "         与前一帧点积: " << std::setprecision(6) << dot << std::endl;
+                        
+                        // 自动调整到同一半球
+                        q = Eigen::Quaterniond(-q.w(), -q.x(), -q.y(), -q.z());
+                        file << "         已自动调整符号以保证连续性" << std::endl;
+                    }
+                }
+                
+                // // 确保四元数在半球表示（w为正）
+                // if (q.w() < 0) {
+                //     q = Eigen::Quaterniond(-q.w(), -q.x(), -q.y(), -q.z());
+                // }
+                
+                // 保存为当前的四元数用于下一帧比较
+                prev_quat = q;
+                has_prev_quat = true;
+                
                 double qx = q.x();
                 double qy = q.y();
                 double qz = q.z();
                 double qw = q.w();
                 
-                // 确保四元数的实部(w)为正，保持表示方式一致
-                // 因为 (w, x, y, z) 和 (-w, -x, -y, -z) 表示同一个姿态
-                if (qw < 0) {
-                    qx = -qx;
-                    qy = -qy;
-                    qz = -qz;
-                    qw = -qw;
-                }
-                
                 file << "  笛卡尔位置: [" << std::fixed << std::setprecision(6)
                      << x << ", " << y << ", " << z << "]" << std::endl;
                 file << "  笛卡尔姿态: [" << std::fixed << std::setprecision(6)
                      << qx << ", " << qy << ", " << qz << ", " << qw << "]" << std::endl;
+                
+                // 可选的：添加欧拉角表示（更直观）
+                Eigen::Vector3d euler = q.toRotationMatrix().eulerAngles(2, 1, 0);  // ZYX顺序
+                file << "  欧拉角(ZYX): [" << std::fixed << std::setprecision(6)
+                     << euler[0] << ", " << euler[1] << ", " << euler[2] << "] 弧度" << std::endl;
+                
             } catch (...) {
                 // 跳过无法计算的点
                 file << "  笛卡尔位置: 无法计算" << std::endl;
@@ -256,8 +321,21 @@ void TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
         file << std::endl;
     }
     
+    // 添加诊断总结
+    if (discontinuity_count > 0) {
+        file << "\n诊断信息:" << std::endl;
+        file << "================" << std::endl;
+        file << "检测到 " << discontinuity_count << " 次四元数符号跳变。" << std::endl;
+        file << "这是正常现象，因为四元数 q 和 -q 表示相同的旋转。" << std::endl;
+        file << "在插值算法中可能会产生这种跳变。" << std::endl;
+    }
+    
     file.close();
     RCLCPP_INFO(logger, "详细轨迹分析已保存到: %s", filename.c_str());
+    
+    if (discontinuity_count > 0) {
+        RCLCPP_WARN(logger, "检测到 %d 次四元数符号跳变，已自动调整", discontinuity_count);
+    }
 }
 
 /**
