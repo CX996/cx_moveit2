@@ -164,6 +164,14 @@ public:
     static PilzPlanner stringToPilzPlanner(const std::string& planner_name);
     
     /**
+     * @brief 计算两个位姿之间的直线距离
+     * @param start_pose 起始位姿
+     * @param end_pose 结束位姿
+     * @return double 直线距离（米）
+     */
+    static double calculateLinearDistance(const geometry_msgs::msg::Pose& start_pose, const geometry_msgs::msg::Pose& end_pose);
+    
+    /**
      * @brief 获取PILZ规划配置
      * @return PilzConfig& 配置引用
      */

@@ -369,12 +369,20 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
             // plan.trajectory_.joint_trajectory = cr7_controller::utils::TrajectoryReplanner::resampleTrajectory(
             //     plan.trajectory_.joint_trajectory, 0.03);  // 每30ms一个点
             
+            // 计算笛卡尔空间的路径长度（直线距离）
+            double cartesian_path_length = 0.0;
+            if (planner_id == "LIN") {
+                auto start_pose = getCurrentPose();
+                cartesian_path_length = CR7PilzPlanner::calculateLinearDistance(start_pose, target_pose);
+                RCLCPP_INFO(logger_, "笛卡尔空间路径长度: %.3f 米", cartesian_path_length);
+            }
+            
             // 重参数化路径
             cr7_controller::utils::TrajectoryReplanner replanner;
             replanner.setVelocityScalingFactor(config.velocity_scale);
             replanner.setAccelerationScalingFactor(config.acceleration_scale);
             plan.trajectory_.joint_trajectory = replanner.reparameterizeTrajectory(
-                                plan.trajectory_.joint_trajectory, 0.03, 1, 0, 0.1, 0.5);  // 每30ms一个点
+                                plan.trajectory_.joint_trajectory, 0.03, 1, 0, 0.1, 0.5, 0.0, cartesian_path_length);  // 每30ms一个点
 
             RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
 
@@ -462,9 +470,20 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
     }
 }
 
-// ============================================================================
-// 工具方法
-// ============================================================================
+// ============================================================================// 工具方法// ============================================================================/**
+ * @brief 计算两个位姿之间的直线距离
+ * @param start_pose 起始位姿
+ * @param end_pose 结束位姿
+ * @return double 直线距离（米）
+ */
+double CR7PilzPlanner::calculateLinearDistance(const geometry_msgs::msg::Pose& start_pose, const geometry_msgs::msg::Pose& end_pose)
+{
+    double dx = end_pose.position.x - start_pose.position.x;
+    double dy = end_pose.position.y - start_pose.position.y;
+    double dz = end_pose.position.z - start_pose.position.z;
+    return std::sqrt(dx*dx + dy*dy + dz*dz);
+}
+
 /**
  * @brief PILZ规划器类型转字符串
  * @param planner 规划器类型
