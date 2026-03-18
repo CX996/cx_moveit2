@@ -179,7 +179,7 @@ public:
     double getPosition(double t) const
     {
         if (t <= 0) return 0.0;
-        if (t >= total_time_) return 1.0;
+        if (t >= total_time_) return distance_;
         
         double time_to_max_vel = max_velocity_ / max_acceleration_;
         double distance_to_max_vel = 0.5 * max_acceleration_ * time_to_max_vel * time_to_max_vel;
@@ -189,11 +189,11 @@ public:
             // 三角形速度曲线
             double time_to_peak = sqrt(distance_ / max_acceleration_);
             if (t <= time_to_peak) {
-                return 0.5 * max_acceleration_ * t * t / distance_;
+                return 0.5 * max_acceleration_ * t * t;
             } else {
                 double t_descend = t - time_to_peak;
                 double peak_vel = max_acceleration_ * time_to_peak;
-                return (peak_vel * t_descend - 0.5 * max_acceleration_ * t_descend * t_descend) / distance_ + 0.5;
+                return (peak_vel * t_descend - 0.5 * max_acceleration_ * t_descend * t_descend) + distance_ / 2.0;
             }
         } 
         else 
@@ -205,14 +205,14 @@ public:
             double cruise_end_time = time_to_max_vel + cruise_time;
             
             if (t <= cruise_start_time) {
-                return 0.5 * max_acceleration_ * t * t / distance_;
+                return 0.5 * max_acceleration_ * t * t;
             } else if (t <= cruise_end_time) {
                 double t_cruise = t - cruise_start_time;
-                return (distance_to_max_vel + max_velocity_ * t_cruise) / distance_;
+                return distance_to_max_vel + max_velocity_ * t_cruise;
             } else {
                 double t_descend = t - cruise_end_time;
                 double peak_vel = max_velocity_;
-                return (distance_to_max_vel + cruise_distance + peak_vel * t_descend - 0.5 * max_acceleration_ * t_descend * t_descend) / distance_;
+                return distance_to_max_vel + cruise_distance + peak_vel * t_descend - 0.5 * max_acceleration_ * t_descend * t_descend;
             }
         }
     }
@@ -269,9 +269,11 @@ trajectory_msgs::msg::JointTrajectory TrajectoryReplanner::reparameterizeTraject
     else if (mode == 1) 
     {
         // 模式1：指定速度/加速度约束
+        // 计算实际路径长度
+        double total_path_length = calculatePathLength(input_traj);
         calculateTimeParameterization_VelAccConstraints(
             original_times, s_values, max_velocity, max_acceleration, max_jerk,
-            new_times, new_s_values, dt);
+            new_times, new_s_values, dt, total_path_length);
     }
     else 
     {
@@ -313,6 +315,29 @@ std::vector<double> TrajectoryReplanner::calculatePathParameterization(
     }
     
     return s_values;
+}
+
+/**
+ * @brief 计算轨迹的实际路径长度
+ */
+double TrajectoryReplanner::calculatePathLength(
+    const trajectory_msgs::msg::JointTrajectory& traj)
+{
+    double total_length = 0.0;
+    
+    // 计算各段的关节空间弧长
+    for (size_t i = 1; i < traj.points.size(); i++) 
+    {
+        double segment_length = 0.0;
+        for (size_t j = 0; j < traj.joint_names.size(); j++) 
+        {
+            double delta = traj.points[i].positions[j] - traj.points[i-1].positions[j];
+            segment_length += delta * delta;
+        }
+        total_length += sqrt(segment_length);
+    }
+    
+    return total_length;
 }
 
 /**
@@ -370,7 +395,8 @@ void TrajectoryReplanner::calculateTimeParameterization_VelAccConstraints(
     double max_jerk,
     std::vector<double>& new_times,
     std::vector<double>& new_s_values,
-    double dt)
+    double dt,
+    double total_path_length)
 {
     new_times.clear();
     new_s_values.clear();
@@ -384,14 +410,15 @@ void TrajectoryReplanner::calculateTimeParameterization_VelAccConstraints(
         planner.setMaxJerk(max_jerk);
     }
     
-    // 计算S曲线
-    planner.plan(0.0, 1.0, 0.0, 0.0);  // 从s=0到s=1，起始速度=0，终点速度=0
+    // 计算S曲线，使用实际路径长度
+    planner.plan(0.0, total_path_length, 0.0, 0.0);  // 从0到实际路径长度，起始速度=0，终点速度=0
     
     double total_time = planner.getTotalTime();
     
     // 采样S曲线
     for (double t = 0.0; t <= total_time; t += dt) {
-        double s = planner.getPosition(t);
+        double position = planner.getPosition(t);
+        double s = (total_path_length > 0) ? position / total_path_length : 0.0;  // 转换回归一化的s值
         new_times.push_back(t);
         new_s_values.push_back(s);
     }
