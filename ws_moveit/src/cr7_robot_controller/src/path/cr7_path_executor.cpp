@@ -65,7 +65,9 @@ std::vector<CR7BaseController::Result> CR7PathExecutor::executeTestPath()
         
         // 创建一个简单的测试路径点
         geometry_msgs::msg::Pose target_pose = current_pose.pose;
-        target_pose.position.z += 0.1; // 向上移动10cm
+        target_pose.position.x += 0.1; // 向前移动10cm
+        target_pose.position.y += 0.1; // 向左移动10cm  
+        target_pose.position.z += 0.1; // 向上移动10cm  
         
         // 优先使用OMPL规划器执行路径
         if (ompl_planner_) 
@@ -73,6 +75,7 @@ std::vector<CR7BaseController::Result> CR7PathExecutor::executeTestPath()
             RCLCPP_INFO(logger_, "使用OMPL规划器执行测试路径...");
             auto result = ompl_planner_->moveToPose(target_pose, "test_waypoint");
             results.push_back(result);
+
         } 
         else 
         {

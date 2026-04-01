@@ -279,12 +279,12 @@ void TrajectoryAnalyzer::saveDetailedTrajectoryAnalysis(
                     if (dot < 0) {
                         discontinuity_detected = true;
                         discontinuity_count++;
-                        file << "  [注意] 检测到四元数符号跳变！" << std::endl;
-                        file << "         与前一帧点积: " << std::setprecision(6) << dot << std::endl;
+                        // file << "  [注意] 检测到四元数符号跳变！" << std::endl;
+                        // file << "         与前一帧点积: " << std::setprecision(6) << dot << std::endl;
                         
                         // 自动调整到同一半球
                         q = Eigen::Quaterniond(-q.w(), -q.x(), -q.y(), -q.z());
-                        file << "         已自动调整符号以保证连续性" << std::endl;
+                        // file << "         已自动调整符号以保证连续性" << std::endl;
                     }
                 }
                 

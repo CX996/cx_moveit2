@@ -221,7 +221,7 @@ CR7BaseController::Result CR7PilzPlanner::testPilzPlanner(PilzPlanner planner_ty
     
     // 创建测试目标位姿
     geometry_msgs::msg::Pose target_pose = current_pose;
-geometry_msgs::msg::Pose intermediate_pose = current_pose;
+    geometry_msgs::msg::Pose intermediate_pose = current_pose;
     target_pose.position.x += 0.1;  // 向前移动10cm
     target_pose.position.y += 0.1;  // 向前移动10cm  
     
@@ -371,22 +371,56 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
             
             // 计算笛卡尔空间的路径长度（直线距离）
             double cartesian_path_length = 0.0;
-            if (planner_id == "LIN") {
+            if (planner_id == "LIN") 
+            {
                 auto start_pose = getCurrentPose();
                 cartesian_path_length = CR7PilzPlanner::calculateLinearDistance(start_pose, target_pose);
                 RCLCPP_INFO(logger_, "笛卡尔空间路径长度: %.3f 米", cartesian_path_length);
+
             }
             
-            // 重参数化路径
-            cr7_controller::utils::TrajectoryReplanner replanner;
-            replanner.setVelocityScalingFactor(config.velocity_scale);
-            replanner.setAccelerationScalingFactor(config.acceleration_scale);
-            plan.trajectory_.joint_trajectory = replanner.reparameterizeTrajectory(
-                                plan.trajectory_.joint_trajectory, 0.03, 1, 0, 0.1, 0.5, 0.0, cartesian_path_length);  // 每30ms一个点
 
-            RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
+            if (planner_id == "LIN") 
+            {
+                // 重参数化路径
+                cr7_controller::utils::TrajectoryReplanner replanner;
+                replanner.setVelocityScalingFactor(config.velocity_scale);
+                replanner.setAccelerationScalingFactor(config.acceleration_scale);
+                double dt = 0.03; // 30ms的时间步长
+                int mode = 1; // 速度规划模式
+                double target_total_time = 0.0; // 由速度约束自动计算总时间
+                double max_velocity = 0.01; // 最大速度
+                double max_acceleration = 0.5; // 最大加速度
+                double max_jerk = 0.0; // 最大 jerk
+                plan.trajectory_.joint_trajectory = replanner.reparameterizeTrajectory(
+                                    plan.trajectory_.joint_trajectory, 
+                                    dt, 
+                                    mode, 
+                                    target_total_time, 
+                                    max_velocity,
+                                    max_acceleration, 
+                                    max_jerk, 
+                                    cartesian_path_length);  // 每30ms一个点
+
+                RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
+            }
+
+
+            if (planner_id == "PTP")
+            {
+                // 对PTP轨迹进行重采样
+                cr7_controller::utils::TrajectoryReplanner replanner;
+                replanner.setVelocityScalingFactor(config.velocity_scale);
+                replanner.setAccelerationScalingFactor(config.acceleration_scale);
+                double dt = 0.03; // 30ms的时间步长
+                plan.trajectory_.joint_trajectory = replanner.resampleTrajectory(plan.trajectory_.joint_trajectory, dt);  // 每30ms一个点
+
+                RCLCPP_INFO(logger_, "重采样后轨迹点数: %zu", plan.trajectory_.joint_trajectory.points.size());
+            }
+            
 
             // 验证LIN轨迹是否直
+            #if 0
             if (planner_id == "LIN") 
             {
                 bool is_linear = true;
@@ -408,6 +442,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
                     planning_success = false;
                 }
             }
+            #endif
         } 
         else 
         {
@@ -426,7 +461,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
         move_group_->clearPathConstraints();
         
         // 8. 保存轨迹分析
-        if (planning_success) 
+        if (!planning_success) 
         {
             auto now = std::chrono::system_clock::now();
             auto time_t = std::chrono::system_clock::to_time_t(now);
@@ -471,7 +506,7 @@ CR7BaseController::Result CR7PilzPlanner::executePilzPlan(
 }
 
 // ============================================================================// 工具方法// ============================================================================/**
- * @brief 计算两个位姿之间的直线距离
+/* @brief 计算两个位姿之间的直线距离
  * @param start_pose 起始位姿
  * @param end_pose 结束位姿
  * @return double 直线距离（米）

@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     auto node = std::make_shared<rclcpp::Node>("cr7_controller");
 
     // ==================== 参数声明 ====================
-    node->declare_parameter<std::string>("execute_mode", "welding_test"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
+    node->declare_parameter<std::string>("execute_mode", "idle"); // idle, test, cartesian_test, pilz_test, tool_axis_test, welding_test
     node->declare_parameter<double>("init_timeout", 10.0);
 
     // 获取参数值
@@ -141,13 +141,16 @@ int main(int argc, char* argv[])
         else if (execute_mode == "welding_test")
         {
             RCLCPP_INFO(node->get_logger(), "执行焊接路径测试...");
-            controller->executeWeldingTestPath();
+            for(int i = 0; i < 100; ++i) {
+                RCLCPP_INFO(node->get_logger(), "焊接测试循环 %d/100", i+1);
+                controller->executeWeldingTestPath();
+                std::this_thread::sleep_for(std::chrono::seconds(2)); // 每次测试后等待2秒
+            }
             obstacle_manager->removeAllObstacles(); // 测试完成后清理障碍物
         }
         else if (execute_mode == "ompl_constraint_test")
         {
             RCLCPP_INFO(node->get_logger(), "执行OMPL约束规划测试...");
-            
             auto result = controller->executeOMPLConstraintTest();
             RCLCPP_INFO(node->get_logger(), "OMPL约束规划测试结果: %s", 
                        controller->resultToString(result).c_str());

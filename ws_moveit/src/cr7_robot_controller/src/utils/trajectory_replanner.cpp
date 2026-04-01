@@ -233,6 +233,7 @@ public:
  * @param max_velocity 最大速度（mode=1时有效，单位：路径参数/秒）
  * @param max_acceleration 最大加速度（mode=1时有效，单位：路径参数/秒²）
  * @param max_jerk 最大加加速度（可选，单位：路径参数/秒³）
+ * @param cartesian_path_length 笛卡尔空间路径长度（可选，单位：米），如果提供则基于笛卡尔路径长度进行速度规划，否则基于关节空间路径长度
  * @return 重新规划时间后的关节轨迹
  */
 trajectory_msgs::msg::JointTrajectory TrajectoryReplanner::reparameterizeTrajectory(
